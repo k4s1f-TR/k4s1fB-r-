@@ -12,10 +12,11 @@ import {
   LogOut,
   Eye,
 } from "lucide-react";
+import type { ViewMode } from "./AppShell";
 
-const topIcons = [
-  { icon: Crosshair, label: "Situation", active: true },
-  { icon: Globe, label: "Global View" },
+const topIcons: { icon: React.ElementType; label: string; viewKey?: ViewMode }[] = [
+  { icon: Crosshair, label: "Situation", viewKey: "situation" },
+  { icon: Globe, label: "Global View", viewKey: "global" },
   { icon: Radio, label: "Signals" },
   { icon: Plane, label: "Air" },
   { icon: Ship, label: "Maritime" },
@@ -33,15 +34,18 @@ function RailIcon({
   icon: Icon,
   label,
   active = false,
+  onClick,
 }: {
   icon: React.ElementType;
   label: string;
   active?: boolean;
+  onClick?: () => void;
 }) {
   return (
     <button
       title={label}
       aria-label={label}
+      onClick={onClick}
       className="relative w-full flex items-center justify-center h-10 rounded-lg transition-all duration-200 group"
       style={
         active
@@ -78,7 +82,13 @@ function RailIcon({
   );
 }
 
-export function LeftRail() {
+export function LeftRail({
+  activeView,
+  onViewChange,
+}: {
+  activeView: ViewMode;
+  onViewChange: (view: ViewMode) => void;
+}) {
   return (
     <div
       className="flex flex-col items-center py-3 flex-shrink-0"
@@ -106,7 +116,13 @@ export function LeftRail() {
       {/* Primary nav icons */}
       <div className="flex flex-col w-full px-2 gap-0.5 flex-1">
         {topIcons.map((item) => (
-          <RailIcon key={item.label} {...item} />
+          <RailIcon
+            key={item.label}
+            icon={item.icon}
+            label={item.label}
+            active={item.viewKey !== undefined ? activeView === item.viewKey : false}
+            onClick={item.viewKey !== undefined ? () => onViewChange(item.viewKey!) : undefined}
+          />
         ))}
       </div>
 

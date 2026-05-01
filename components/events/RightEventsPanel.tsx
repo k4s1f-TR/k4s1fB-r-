@@ -36,7 +36,7 @@ export function RightEventsPanel({
         </span>
         <div className="flex items-center gap-2">
           <span style={{ fontSize: "10.5px", color: "rgba(75,95,130,0.85)" }}>
-            128 Results
+            {events.length} Results
           </span>
           <button
             style={{ color: "rgba(70,88,118,0.85)" }}

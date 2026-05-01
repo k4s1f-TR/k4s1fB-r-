@@ -25,6 +25,28 @@ export type VerificationStatus =
   | "unverified"
   | "disputed";
 
+export type EventScope = "regional" | "global";
+
+export type RegionKey = "middle-east" | "europe" | "asia-pacific" | "americas";
+
+export const REGION_OPTIONS: { key: RegionKey; label: string }[] = [
+  { key: "middle-east", label: "Middle East" },
+  { key: "europe", label: "Europe" },
+  { key: "asia-pacific", label: "Asia-Pacific" },
+  { key: "americas", label: "Americas" },
+];
+
+export const CATEGORY_OPTIONS: { key: EventCategory | "all"; label: string }[] = [
+  { key: "all", label: "All Categories" },
+  { key: "politics", label: "Politics" },
+  { key: "conflict", label: "Conflict" },
+  { key: "intel", label: "Intel" },
+  { key: "maritime", label: "Maritime" },
+  { key: "humanitarian", label: "Humanitarian" },
+  { key: "energy", label: "Energy" },
+  { key: "air", label: "Air" },
+];
+
 export type OsintEvent = {
   id: string;
   title: string;
@@ -35,6 +57,8 @@ export type OsintEvent = {
   time: string;
   sourceType: SourceType;
   verification: VerificationStatus;
+  scope: EventScope;
+  region: RegionKey;
   tags?: string[];
   coordinates?: { lat: number; lng: number };
 };

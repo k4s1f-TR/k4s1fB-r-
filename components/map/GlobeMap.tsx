@@ -143,6 +143,67 @@ function applyDarkMapStyle(map: maplibregl.Map) {
   setLayout(map, "countries-label", "text-size", ["interpolate", ["linear"], ["zoom"], 2, 8.5, 4, 10.5, 6, 13]);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function darkenStyleJson(base: Record<string, any>): Record<string, any> {
+  const style = JSON.parse(JSON.stringify(base));
+  for (const layer of style.layers as Array<Record<string, any>>) {
+    const p: Record<string, any> = layer.paint ?? {};
+    const l: Record<string, any> = layer.layout ?? {};
+    switch (layer.id) {
+      case "background":
+        layer.paint = { ...p, "background-color": "#02070d" };
+        break;
+      case "countries-fill":
+      case "crimea-fill":
+        layer.paint = { ...p, "fill-color": "#071119", "fill-opacity": 0.96 };
+        break;
+      case "coastline":
+        layer.paint = {
+          ...p,
+          "line-color": "rgba(44, 78, 104, 0.38)",
+          "line-blur": 0.7,
+          "line-width": ["interpolate", ["linear"], ["zoom"], 1, 0.7, 6, 2.4],
+        };
+        break;
+      case "countries-boundary":
+        layer.paint = {
+          ...p,
+          "line-color": "rgba(89, 111, 137, 0.5)",
+          "line-opacity": ["interpolate", ["linear"], ["zoom"], 2, 0.2, 5, 0.52],
+          "line-width": ["interpolate", ["linear"], ["zoom"], 1, 0.35, 6, 1.1],
+        };
+        break;
+      case "geolines":
+        layer.paint = { ...p, "line-color": "rgba(63, 90, 116, 0.42)", "line-opacity": 0.28 };
+        break;
+      case "geolines-label":
+        layer.paint = {
+          ...p,
+          "text-color": "rgba(91, 116, 145, 0.55)",
+          "text-halo-color": "rgba(2, 7, 13, 0.78)",
+          "text-halo-width": 1,
+        };
+        break;
+      case "countries-label":
+        layer.paint = {
+          ...p,
+          "text-color": "rgba(117, 137, 163, 0.66)",
+          "text-halo-color": "rgba(2, 7, 13, 0.86)",
+          "text-halo-width": 1.1,
+          "text-opacity": ["interpolate", ["linear"], ["zoom"], 2, 0.48, 4, 0.72, 6, 0.86],
+        };
+        layer.layout = {
+          ...l,
+          "text-field": "{NAME}",
+          "text-transform": "none",
+          "text-size": ["interpolate", ["linear"], ["zoom"], 2, 8.5, 4, 10.5, 6, 13],
+        };
+        break;
+    }
+  }
+  return style;
+}
+
 function labelCollection(
   labels: readonly { name: string; coordinates: readonly number[]; minZoom: number }[],
 ): GeoJSON.FeatureCollection<GeoJSON.Point> {
@@ -429,48 +490,71 @@ export function GlobeMap({ events, selectedId, onSelectEvent }: Props) {
 
   useEffect(() => {
     if (!containerRef.current) return;
+    let rafId: number | undefined;
+    let map: maplibregl.Map | null = null;
+    let cancelled = false;
 
-    const map = new maplibregl.Map({
-      container: containerRef.current,
-      style: STYLE_URL,
-      center: MAP_CENTER,
-      zoom: 3.15,
-      minZoom: 1.5,
-      maxZoom: 8,
-      pitch: 0,
-      bearing: 0,
-      attributionControl: false,
-      renderWorldCopies: false,
-    });
+    async function init() {
+      const res = await fetch(STYLE_URL);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const base = await res.json() as Record<string, any>;
+      const darkStyle = darkenStyleJson(base);
 
-    mapRef.current = map;
-    map.on("load", () => {
-      map.setProjection({ type: "globe" });
-      applyDarkMapStyle(map);
-      addDetailLabelLayers(map);
-      addEventLayers(map);
-      map.resize();
-      setStyleReady(true);
-    });
+      if (cancelled || !containerRef.current) return;
 
-    map.on("click", EVENT_HIT_LAYER_ID, (event) => {
-      const id = event.features?.[0]?.properties?.id;
-      if (typeof id === "string") {
-        onSelectEventRef.current?.(id);
-      }
-    });
+      map = new maplibregl.Map({
+        container: containerRef.current,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        style: darkStyle as any,
+        center: MAP_CENTER,
+        zoom: 2.2,
+        minZoom: 1.0,
+        maxZoom: 8,
+        pitch: 0,
+        bearing: 0,
+        attributionControl: false,
+        renderWorldCopies: false,
+      });
 
-    map.on("mouseenter", EVENT_HIT_LAYER_ID, () => {
-      map.getCanvas().style.cursor = "pointer";
-    });
+      mapRef.current = map;
 
-    map.on("mouseleave", EVENT_HIT_LAYER_ID, () => {
-      map.getCanvas().style.cursor = "";
-    });
+      map.on("load", () => {
+        map!.setProjection({ type: "globe" });
+        applyDarkMapStyle(map!);
+        addDetailLabelLayers(map!);
+        addEventLayers(map!);
+        map!.resize();
+        // "render" fires from MapLibre's own GL draw loop — first dark frame is on canvas
+        map!.once("render", () => {
+          rafId = requestAnimationFrame(() => setStyleReady(true));
+        });
+      });
+
+      map.on("click", EVENT_HIT_LAYER_ID, (event) => {
+        const id = event.features?.[0]?.properties?.id;
+        if (typeof id === "string") {
+          onSelectEventRef.current?.(id);
+        }
+      });
+
+      map.on("mouseenter", EVENT_HIT_LAYER_ID, () => {
+        map!.getCanvas().style.cursor = "pointer";
+      });
+
+      map.on("mouseleave", EVENT_HIT_LAYER_ID, () => {
+        map!.getCanvas().style.cursor = "";
+      });
+    }
+
+    init();
 
     return () => {
-      map.remove();
-      mapRef.current = null;
+      cancelled = true;
+      if (rafId !== undefined) cancelAnimationFrame(rafId);
+      if (map) {
+        map.remove();
+        mapRef.current = null;
+      }
     };
   }, []);
 
@@ -488,6 +572,16 @@ export function GlobeMap({ events, selectedId, onSelectEvent }: Props) {
         style={{
           background:
             "radial-gradient(circle at 50% 45%, rgba(59,130,246,0.04) 0%, rgba(2,8,16,0) 42%, rgba(1,5,8,0.56) 100%)",
+        }}
+      />
+      {/* Dark mask above the canvas — fades out only after idle + rAF confirms dark frame is painted */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background: "#020810",
+          opacity: styleReady ? 0 : 1,
+          transition: "opacity 0.1s ease",
+          zIndex: 5,
         }}
       />
     </div>

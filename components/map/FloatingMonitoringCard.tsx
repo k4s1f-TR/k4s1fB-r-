@@ -9,6 +9,7 @@ interface Props {
   view: ViewMode;
   activeRegion: RegionKey;
   activeCategory: EventCategory | "all";
+  isPoliticsWatch?: boolean;
   eventCount: number;
   onViewChange: (view: ViewMode) => void;
   onRegionChange: (region: RegionKey) => void;
@@ -45,6 +46,7 @@ export function FloatingMonitoringCard({
   view,
   activeRegion,
   activeCategory,
+  isPoliticsWatch = false,
   eventCount,
   onViewChange,
   onRegionChange,
@@ -57,6 +59,12 @@ export function FloatingMonitoringCard({
   const isGlobal = view === "global";
   const regionLabel = REGION_OPTIONS.find((r) => r.key === activeRegion)?.label ?? "Middle East";
   const categoryLabel = CATEGORY_OPTIONS.find((c) => c.key === activeCategory)?.label ?? "All Categories";
+  const monitoringTitle = isPoliticsWatch ? "Politics Watch" : isGlobal ? "Global View" : regionLabel;
+  const monitoringSubtitle = isPoliticsWatch
+    ? "Regional Political Monitoring"
+    : isGlobal
+      ? "Middle East + Global Watch"
+      : "Regional Situation Watch";
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -104,7 +112,7 @@ export function FloatingMonitoringCard({
             className="font-semibold"
             style={{ fontSize: "14px", color: "rgba(210,210,210,0.95)" }}
           >
-            {isGlobal ? "Global View" : regionLabel}
+            {monitoringTitle}
           </span>
           <ChevronDown
             size={12}
@@ -119,7 +127,7 @@ export function FloatingMonitoringCard({
           className="block mt-0.5"
           style={{ fontSize: "10.5px", color: "rgba(100,100,100,0.85)" }}
         >
-          {isGlobal ? "Middle East + Global Watch" : "Regional Situation Watch"}
+          {monitoringSubtitle}
         </span>
 
         {regionOpen && (

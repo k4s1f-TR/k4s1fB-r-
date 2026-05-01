@@ -1,21 +1,24 @@
 "use client";
+import { useEffect, useState } from "react";
 import { Search, Bell, Sun } from "lucide-react";
+import type { ReactNode } from "react";
 
-const NAV_TABS = [
-  "Situation",
-  "Politics",
-  "Conflict",
-  "Intel Watch",
-  "Air",
-  "Maritime",
-  "Sources",
+type TopNavTab = "situation" | "politics" | "sources";
+
+const NAV_TABS: { label: string; key?: TopNavTab }[] = [
+  { label: "Situation", key: "situation" },
+  { label: "Politics", key: "politics" },
+  { label: "Intel Watch" },
+  { label: "Air" },
+  { label: "Maritime" },
+  { label: "Sources", key: "sources" },
 ];
 
 function IconBtn({
   children,
   className = "",
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
 }) {
   return (
@@ -36,7 +39,29 @@ function IconBtn({
   );
 }
 
-export function HeaderNav() {
+export function HeaderNav({
+  activeTab,
+  onTabSelect,
+}: {
+  activeTab: TopNavTab;
+  onTabSelect: (tab: TopNavTab) => void;
+}) {
+  const [clock, setClock] = useState("--:--:--");
+
+  useEffect(() => {
+    const updateClock = () => {
+      setClock(new Date().toISOString().slice(11, 19));
+    };
+    const firstTickId = setTimeout(updateClock, 0);
+    const id = setInterval(() => {
+      updateClock();
+    }, 1000);
+    return () => {
+      clearTimeout(firstTickId);
+      clearInterval(id);
+    };
+  }, []);
+
   return (
     <header
       className="flex items-center flex-shrink-0 px-5"
@@ -59,10 +84,12 @@ export function HeaderNav() {
       {/* Nav */}
       <nav className="flex items-center gap-0.5 flex-1">
         {NAV_TABS.map((tab) => {
-          const active = tab === "Situation";
+          const tabKey = tab.key;
+          const active = tabKey === activeTab;
           return (
             <button
-              key={tab}
+              key={tab.label}
+              onClick={tabKey ? () => onTabSelect(tabKey) : undefined}
               className="relative px-3 h-full flex items-center transition-colors duration-150"
               style={{
                 height: "52px",
@@ -72,6 +99,7 @@ export function HeaderNav() {
                   ? "rgba(147,197,253,0.95)"
                   : "rgba(100,100,100,0.85)",
                 letterSpacing: "0.01em",
+                cursor: tabKey ? "pointer" : "default",
               }}
               onMouseEnter={(e) => {
                 if (!active)
@@ -84,7 +112,7 @@ export function HeaderNav() {
                     "rgba(100,100,100,0.85)";
               }}
             >
-              {tab}
+              {tab.label}
               {active && (
                 <span
                   className="absolute bottom-0 left-2 right-2 h-[2px] rounded-t-full"
@@ -98,6 +126,23 @@ export function HeaderNav() {
 
       {/* Right controls */}
       <div className="flex items-center gap-1">
+        {/* Live UTC clock */}
+        <div
+          className="flex items-center mr-2 px-2.5 py-1 rounded-md select-none"
+          style={{
+            background: "rgba(255,255,255,0.03)",
+            border: "1px solid rgba(255,255,255,0.07)",
+            fontSize: "12px",
+            fontWeight: 500,
+            color: "rgba(165,165,165,0.9)",
+            fontVariantNumeric: "tabular-nums",
+            letterSpacing: "0.04em",
+            fontFamily: "ui-monospace, monospace",
+          }}
+        >
+          {clock}
+        </div>
+
         <IconBtn>
           <Search size={14} />
         </IconBtn>

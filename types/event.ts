@@ -29,6 +29,8 @@ export type EventScope = "regional" | "global";
 
 export type RegionKey = "middle-east" | "europe" | "asia-pacific" | "americas";
 
+export type EventMarkerVariant = "turkey-focus";
+
 export const REGION_OPTIONS: { key: RegionKey; label: string }[] = [
   { key: "middle-east", label: "Middle East" },
   { key: "europe", label: "Europe" },
@@ -49,6 +51,7 @@ export const CATEGORY_OPTIONS: { key: EventCategory | "all"; label: string }[] =
 
 export type OsintEvent = {
   id: string;
+  sourceId: string;
   title: string;
   summary: string;
   category: EventCategory;
@@ -59,6 +62,7 @@ export type OsintEvent = {
   verification: VerificationStatus;
   scope: EventScope;
   region: RegionKey;
+  markerVariant?: EventMarkerVariant;
   tags?: string[];
   coordinates?: { lat: number; lng: number };
 };

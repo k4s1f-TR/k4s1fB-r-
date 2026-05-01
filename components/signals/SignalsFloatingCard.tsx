@@ -1,11 +1,14 @@
 "use client";
 import { Radio } from "lucide-react";
 import { mockSignals } from "@/data/mockSignals";
+import { radarSites } from "@/data/signals/radarSites";
 import type { SignalType } from "@/types/signal";
 
 interface Props {
   confidenceMin: number;
   onConfidenceChange: (min: number) => void;
+  showRadarSites: boolean;
+  onToggleRadarSites: () => void;
 }
 
 const LABEL_STYLE = {
@@ -34,7 +37,7 @@ const TYPE_LABELS: Record<SignalType, string> = {
 
 const SIGNAL_TYPES: SignalType[] = ["source", "electronic", "early-warning"];
 
-export function SignalsFloatingCard({ confidenceMin, onConfidenceChange }: Props) {
+export function SignalsFloatingCard({ confidenceMin, onConfidenceChange, showRadarSites, onToggleRadarSites }: Props) {
   const filtered = mockSignals.filter((s) => s.confidence >= confidenceMin);
 
   return (
@@ -167,6 +170,67 @@ export function SignalsFloatingCard({ confidenceMin, onConfidenceChange }: Props
             </span>
           </div>
         </div>
+      </div>
+
+      {/* Layers */}
+      <div
+        style={{
+          borderTop: "1px solid rgba(255,255,255,0.05)",
+          paddingTop: "11px",
+        }}
+      >
+        <span className="tracking-widest uppercase block mb-2" style={LABEL_STYLE}>
+          Layers
+        </span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
+            <span style={{ fontSize: "10.5px", color: "rgba(140,140,140,0.85)" }}>
+              Radar Infrastructure
+            </span>
+            <span style={{ fontSize: "9px", color: "rgba(80,80,80,0.8)" }}>
+              {radarSites.length}
+            </span>
+          </div>
+          <button
+            onClick={onToggleRadarSites}
+            style={{
+              fontSize: "9.5px",
+              fontWeight: 600,
+              padding: "3px 8px",
+              borderRadius: "5px",
+              color: showRadarSites ? "rgba(196,181,253,0.95)" : "rgba(80,80,80,0.85)",
+              background: showRadarSites ? "rgba(167,139,250,0.12)" : "rgba(255,255,255,0.03)",
+              border: showRadarSites
+                ? "1px solid rgba(167,139,250,0.22)"
+                : "1px solid rgba(255,255,255,0.05)",
+              transition: "all 150ms",
+            }}
+          >
+            {showRadarSites ? "ON" : "OFF"}
+          </button>
+        </div>
+      </div>
+
+      {/* Attribution */}
+      <div
+        style={{
+          borderTop: "1px solid rgba(255,255,255,0.04)",
+          paddingTop: "8px",
+          marginTop: "8px",
+        }}
+      >
+        <span
+          style={{
+            fontSize: "8px",
+            color: "rgba(65,65,65,0.9)",
+            lineHeight: 1.6,
+            display: "block",
+          }}
+        >
+          Radar layer: ClimateViewer / Jim Lee
+          <br />
+          CC BY-NC-SA 4.0
+        </span>
       </div>
     </div>
   );

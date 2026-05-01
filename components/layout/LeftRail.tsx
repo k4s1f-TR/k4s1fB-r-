@@ -1,11 +1,9 @@
 "use client";
 import {
-  Crosshair,
   Globe,
   Radio,
   Plane,
   Ship,
-  FileText,
   Bookmark,
   BarChart2,
   Settings,
@@ -15,12 +13,10 @@ import {
 import type { ViewMode } from "./AppShell";
 
 const topIcons: { icon: React.ElementType; label: string; viewKey?: ViewMode }[] = [
-  { icon: Crosshair, label: "Situation", viewKey: "situation" },
   { icon: Globe, label: "Global View", viewKey: "global" },
-  { icon: Radio, label: "Signals", viewKey: "signals" },
-  { icon: Plane, label: "Air" },
-  { icon: Ship, label: "Maritime" },
-  { icon: FileText, label: "Sources" },
+  { icon: Radio, label: "Signals/Radar", viewKey: "signals" },
+  { icon: Plane, label: "Air Track" },
+  { icon: Ship, label: "Ship Track" },
   { icon: Bookmark, label: "Bookmarks" },
   { icon: BarChart2, label: "Analytics" },
 ];
@@ -86,7 +82,7 @@ export function LeftRail({
   activeView,
   onViewChange,
 }: {
-  activeView: ViewMode;
+  activeView: ViewMode | null;
   onViewChange: (view: ViewMode) => void;
 }) {
   return (

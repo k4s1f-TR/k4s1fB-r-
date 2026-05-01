@@ -1,0 +1,96 @@
+"use client";
+import { SlidersHorizontal, ArrowRight } from "lucide-react";
+import { OsintEvent } from "@/types/event";
+import { EventCard } from "./EventCard";
+
+interface RightEventsPanelProps {
+  events: OsintEvent[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+}
+
+export function RightEventsPanel({
+  events,
+  selectedId,
+  onSelect,
+}: RightEventsPanelProps) {
+  return (
+    <div
+      className="flex flex-col h-full flex-shrink-0"
+      style={{
+        width: "372px",
+        background: "rgba(4,7,15,0.95)",
+        borderLeft: "1px solid rgba(255,255,255,0.05)",
+      }}
+    >
+      {/* Panel header */}
+      <div
+        className="flex items-center justify-between px-4 py-2.5 flex-shrink-0"
+        style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
+      >
+        <span
+          className="font-semibold tracking-widest uppercase"
+          style={{ fontSize: "10px", color: "rgba(160,180,210,0.8)" }}
+        >
+          Active Events
+        </span>
+        <div className="flex items-center gap-2">
+          <span style={{ fontSize: "10.5px", color: "rgba(75,95,130,0.85)" }}>
+            128 Results
+          </span>
+          <button
+            style={{ color: "rgba(70,88,118,0.85)" }}
+            onMouseEnter={(e) =>
+              ((e.currentTarget as HTMLElement).style.color =
+                "rgba(96,165,250,0.8)")
+            }
+            onMouseLeave={(e) =>
+              ((e.currentTarget as HTMLElement).style.color =
+                "rgba(70,88,118,0.85)")
+            }
+          >
+            <SlidersHorizontal size={12} />
+          </button>
+        </div>
+      </div>
+
+      {/* Scrollable card list */}
+      <div
+        className="flex-1 overflow-y-auto"
+        style={{ padding: "8px 10px", display: "flex", flexDirection: "column", gap: "6px" }}
+      >
+        {events.map((event, i) => (
+          <EventCard
+            key={event.id}
+            event={event}
+            index={i + 1}
+            selected={selectedId === event.id}
+            onClick={() => onSelect(event.id)}
+          />
+        ))}
+      </div>
+
+      {/* Footer */}
+      <div
+        className="flex-shrink-0 px-4 py-2.5"
+        style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
+      >
+        <button
+          className="flex items-center gap-1.5 transition-colors duration-150"
+          style={{ fontSize: "11px", color: "rgba(96,165,250,0.75)" }}
+          onMouseEnter={(e) =>
+            ((e.currentTarget as HTMLElement).style.color =
+              "rgba(147,197,253,0.9)")
+          }
+          onMouseLeave={(e) =>
+            ((e.currentTarget as HTMLElement).style.color =
+              "rgba(96,165,250,0.75)")
+          }
+        >
+          View all results
+          <ArrowRight size={11} />
+        </button>
+      </div>
+    </div>
+  );
+}

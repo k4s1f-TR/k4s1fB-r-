@@ -17,12 +17,12 @@ interface Props {
 
 const LABEL_STYLE = {
   fontSize: "8.5px",
-  color: "rgba(75,95,130,0.8)",
+  color: "rgba(100,100,100,0.8)",
   fontWeight: 600,
 } as const;
 
 const DROPDOWN_STYLE = {
-  background: "rgba(4,8,18,0.98)",
+  background: "rgba(12,12,12,0.98)",
   border: "1px solid rgba(255,255,255,0.08)",
   backdropFilter: "blur(14px)",
   boxShadow: "0 8px 24px rgba(0,0,0,0.6)",
@@ -35,7 +35,7 @@ function itemStyle(active: boolean) {
     textAlign: "left" as const,
     padding: "7px 12px",
     fontSize: "12px",
-    color: active ? "rgba(147,197,253,0.9)" : "rgba(160,185,220,0.8)",
+    color: active ? "rgba(147,197,253,0.9)" : "rgba(170,170,170,0.8)",
     background: active ? "rgba(59,130,246,0.08)" : "transparent",
     cursor: "pointer",
   };
@@ -77,7 +77,7 @@ export function FloatingMonitoringCard({
       className="absolute top-4 left-4 rounded-xl z-10"
       style={{
         padding: "14px 16px",
-        background: "rgba(4,8,18,0.88)",
+        background: "rgba(12,12,12,0.88)",
         border: "1px solid rgba(255,255,255,0.07)",
         backdropFilter: "blur(14px)",
         minWidth: "206px",
@@ -88,7 +88,7 @@ export function FloatingMonitoringCard({
       {/* Monitoring Region */}
       <div className="mb-3" style={{ position: "relative" }}>
         <div className="flex items-center gap-1.5 mb-1">
-          <Globe2 size={9} style={{ color: "rgba(75,95,130,0.7)" }} />
+          <Globe2 size={9} style={{ color: "rgba(100,100,100,0.7)" }} />
           <span className="tracking-widest uppercase" style={LABEL_STYLE}>
             Monitoring Region
           </span>
@@ -102,14 +102,14 @@ export function FloatingMonitoringCard({
         >
           <span
             className="font-semibold"
-            style={{ fontSize: "14px", color: "rgba(210,228,250,0.95)" }}
+            style={{ fontSize: "14px", color: "rgba(210,210,210,0.95)" }}
           >
             {isGlobal ? "Global View" : regionLabel}
           </span>
           <ChevronDown
             size={12}
             style={{
-              color: "rgba(75,95,130,0.7)",
+              color: "rgba(100,100,100,0.7)",
               transform: regionOpen ? "rotate(180deg)" : undefined,
               transition: "transform 150ms",
             }}
@@ -117,7 +117,7 @@ export function FloatingMonitoringCard({
         </button>
         <span
           className="block mt-0.5"
-          style={{ fontSize: "10.5px", color: "rgba(75,95,130,0.85)" }}
+          style={{ fontSize: "10.5px", color: "rgba(100,100,100,0.85)" }}
         >
           {isGlobal ? "Middle East + Global Watch" : "Regional Situation Watch"}
         </span>
@@ -197,13 +197,13 @@ export function FloatingMonitoringCard({
             setRegionOpen(false);
           }}
         >
-          <span style={{ fontSize: "12.5px", color: "rgba(180,200,228,0.9)" }}>
+          <span style={{ fontSize: "12.5px", color: "rgba(185,185,185,0.9)" }}>
             {categoryLabel}
           </span>
           <ChevronDown
             size={12}
             style={{
-              color: "rgba(75,95,130,0.7)",
+              color: "rgba(100,100,100,0.7)",
               transform: categoryOpen ? "rotate(180deg)" : undefined,
               transition: "transform 150ms",
             }}
@@ -260,7 +260,7 @@ export function FloatingMonitoringCard({
         <div className="flex items-end gap-2">
           <span
             className="font-bold leading-none"
-            style={{ fontSize: "28px", color: "rgba(220,234,252,0.97)" }}
+            style={{ fontSize: "28px", color: "rgba(220,220,220,0.97)" }}
           >
             {eventCount}
           </span>
@@ -273,7 +273,7 @@ export function FloatingMonitoringCard({
             </span>
             <span
               className="leading-tight"
-              style={{ fontSize: "9.5px", color: "rgba(75,95,130,0.8)" }}
+              style={{ fontSize: "9.5px", color: "rgba(100,100,100,0.8)" }}
             >
               vs last 24h
             </span>

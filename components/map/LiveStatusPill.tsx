@@ -6,7 +6,7 @@ export function LiveStatusPill() {
       className="absolute bottom-4 left-4 flex items-center gap-2.5 rounded-lg z-10"
       style={{
         padding: "5px 10px",
-        background: "rgba(4,8,18,0.85)",
+        background: "rgba(12,12,12,0.85)",
         border: "1px solid rgba(255,255,255,0.06)",
         backdropFilter: "blur(10px)",
       }}
@@ -14,13 +14,13 @@ export function LiveStatusPill() {
       <div className="flex items-center gap-1.5">
         <span
           className="tracking-widest uppercase"
-          style={{ fontSize: "8.5px", color: "rgba(70,88,118,0.85)", fontWeight: 600 }}
+          style={{ fontSize: "8.5px", color: "rgba(90,90,90,0.85)", fontWeight: 600 }}
         >
           Last Updated
         </span>
         <span
           className="font-semibold"
-          style={{ fontSize: "10.5px", color: "rgba(160,182,215,0.9)" }}
+          style={{ fontSize: "10.5px", color: "rgba(170,170,170,0.9)" }}
         >
           03:42 UTC
         </span>

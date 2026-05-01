@@ -19,7 +19,7 @@ export function RightEventsPanel({
       className="flex flex-col h-full flex-shrink-0"
       style={{
         width: "372px",
-        background: "rgba(4,7,15,0.95)",
+        background: "rgba(10,10,10,0.95)",
         borderLeft: "1px solid rgba(255,255,255,0.05)",
       }}
     >
@@ -30,23 +30,23 @@ export function RightEventsPanel({
       >
         <span
           className="font-semibold tracking-widest uppercase"
-          style={{ fontSize: "10px", color: "rgba(160,180,210,0.8)" }}
+          style={{ fontSize: "10px", color: "rgba(170,170,170,0.8)" }}
         >
           Active Events
         </span>
         <div className="flex items-center gap-2">
-          <span style={{ fontSize: "10.5px", color: "rgba(75,95,130,0.85)" }}>
+          <span style={{ fontSize: "10.5px", color: "rgba(100,100,100,0.85)" }}>
             {events.length} Results
           </span>
           <button
-            style={{ color: "rgba(70,88,118,0.85)" }}
+            style={{ color: "rgba(90,90,90,0.85)" }}
             onMouseEnter={(e) =>
               ((e.currentTarget as HTMLElement).style.color =
                 "rgba(96,165,250,0.8)")
             }
             onMouseLeave={(e) =>
               ((e.currentTarget as HTMLElement).style.color =
-                "rgba(70,88,118,0.85)")
+                "rgba(90,90,90,0.85)")
             }
           >
             <SlidersHorizontal size={12} />

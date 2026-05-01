@@ -21,9 +21,9 @@ function IconBtn({
   return (
     <button
       className={`w-7 h-7 flex items-center justify-center rounded-md transition-colors duration-150 ${className}`}
-      style={{ color: "rgba(90,108,138,0.9)" }}
+      style={{ color: "rgba(110,110,110,0.9)" }}
       onMouseEnter={(e) => {
-        (e.currentTarget as HTMLElement).style.color = "rgba(190,210,240,0.9)";
+        (e.currentTarget as HTMLElement).style.color = "rgba(200,200,200,0.9)";
         (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.04)";
       }}
       onMouseLeave={(e) => {
@@ -42,7 +42,7 @@ export function HeaderNav() {
       className="flex items-center flex-shrink-0 px-5"
       style={{
         height: "52px",
-        background: "rgba(4, 7, 15, 0.98)",
+        background: "rgba(10, 10, 10, 0.98)",
         borderBottom: "1px solid rgba(255,255,255,0.05)",
       }}
     >
@@ -50,7 +50,7 @@ export function HeaderNav() {
       <div className="flex flex-col justify-center mr-10" style={{ minWidth: "190px" }}>
         <span
           className="leading-tight font-bold tracking-tight"
-          style={{ fontSize: "15px", color: "rgba(220,232,248,0.95)" }}
+          style={{ fontSize: "15px", color: "rgba(220,220,220,0.95)" }}
         >
           BörüEyes
         </span>
@@ -70,18 +70,18 @@ export function HeaderNav() {
                 fontWeight: active ? 500 : 400,
                 color: active
                   ? "rgba(147,197,253,0.95)"
-                  : "rgba(80,96,128,0.85)",
+                  : "rgba(100,100,100,0.85)",
                 letterSpacing: "0.01em",
               }}
               onMouseEnter={(e) => {
                 if (!active)
                   (e.currentTarget as HTMLElement).style.color =
-                    "rgba(180,200,230,0.9)";
+                    "rgba(190,190,190,0.9)";
               }}
               onMouseLeave={(e) => {
                 if (!active)
                   (e.currentTarget as HTMLElement).style.color =
-                    "rgba(80,96,128,0.85)";
+                    "rgba(100,100,100,0.85)";
               }}
             >
               {tab}

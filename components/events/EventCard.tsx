@@ -72,7 +72,7 @@ export function EventCard({ event, index, selected, onClick }: EventCardProps) {
         </p>
         <button
           className="flex-shrink-0 mt-0.5 transition-colors duration-150"
-          style={{ color: "rgba(60,80,110,0.8)" }}
+          style={{ color: "rgba(85,85,85,0.8)" }}
           onClick={(e) => e.stopPropagation()}
           onMouseEnter={(e) =>
             ((e.currentTarget as HTMLElement).style.color =
@@ -80,7 +80,7 @@ export function EventCard({ event, index, selected, onClick }: EventCardProps) {
           }
           onMouseLeave={(e) =>
             ((e.currentTarget as HTMLElement).style.color =
-              "rgba(60,80,110,0.8)")
+              "rgba(85,85,85,0.8)")
           }
         >
           <Bookmark size={11} />
@@ -90,14 +90,14 @@ export function EventCard({ event, index, selected, onClick }: EventCardProps) {
       {/* Meta: time + location */}
       <div
         className="flex items-center gap-3 mb-1.5"
-        style={{ fontSize: "10.5px", color: "rgba(75,95,130,0.9)" }}
+        style={{ fontSize: "10.5px", color: "rgba(100,100,100,0.9)" }}
       >
         <span className="flex items-center gap-1">
-          <Clock size={9} style={{ color: "rgba(60,80,110,0.7)" }} />
+          <Clock size={9} style={{ color: "rgba(85,85,85,0.7)" }} />
           {event.time}
         </span>
         <span className="flex items-center gap-1">
-          <MapPin size={9} style={{ color: "rgba(60,80,110,0.7)" }} />
+          <MapPin size={9} style={{ color: "rgba(85,85,85,0.7)" }} />
           {event.location}
         </span>
       </div>
@@ -113,7 +113,7 @@ export function EventCard({ event, index, selected, onClick }: EventCardProps) {
       {/* Summary */}
       <p
         className="leading-relaxed line-clamp-2"
-        style={{ fontSize: "11.5px", color: "rgba(90,110,145,0.9)" }}
+        style={{ fontSize: "11.5px", color: "rgba(110,110,110,0.9)" }}
       >
         {event.summary}
       </p>

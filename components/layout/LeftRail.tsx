@@ -17,7 +17,7 @@ import type { ViewMode } from "./AppShell";
 const topIcons: { icon: React.ElementType; label: string; viewKey?: ViewMode }[] = [
   { icon: Crosshair, label: "Situation", viewKey: "situation" },
   { icon: Globe, label: "Global View", viewKey: "global" },
-  { icon: Radio, label: "Signals" },
+  { icon: Radio, label: "Signals", viewKey: "signals" },
   { icon: Plane, label: "Air" },
   { icon: Ship, label: "Maritime" },
   { icon: FileText, label: "Sources" },
@@ -54,18 +54,18 @@ function RailIcon({
               color: "rgba(147,197,253,0.9)",
             }
           : {
-              color: "rgba(75,90,120,0.9)",
+              color: "rgba(90,90,90,0.9)",
             }
       }
       onMouseEnter={(e) => {
         if (!active) {
-          (e.currentTarget as HTMLElement).style.color = "rgba(180,200,230,0.9)";
+          (e.currentTarget as HTMLElement).style.color = "rgba(190,190,190,0.9)";
           (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.04)";
         }
       }}
       onMouseLeave={(e) => {
         if (!active) {
-          (e.currentTarget as HTMLElement).style.color = "rgba(75,90,120,0.9)";
+          (e.currentTarget as HTMLElement).style.color = "rgba(90,90,90,0.9)";
           (e.currentTarget as HTMLElement).style.background = "transparent";
         }
       }}
@@ -95,7 +95,7 @@ export function LeftRail({
       style={{
         width: "68px",
         minWidth: "68px",
-        background: "rgba(4, 7, 15, 0.98)",
+        background: "rgba(10, 10, 10, 0.98)",
         borderRight: "1px solid rgba(255,255,255,0.05)",
       }}
     >

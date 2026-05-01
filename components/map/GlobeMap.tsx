@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import { OsintEvent } from "@/types/event";
+import type { OsintSignal } from "@/types/signal";
 
 const STYLE_URL = "https://demotiles.maplibre.org/style.json";
 const MAP_CENTER: [number, number] = [44, 27];
@@ -13,6 +14,11 @@ const EVENT_CORE_LAYER_ID = "borueyes-event-core";
 const EVENT_HIT_LAYER_ID = "borueyes-event-hit";
 const CITY_SOURCE_ID = "borueyes-major-cities";
 const WATER_SOURCE_ID = "borueyes-water-labels";
+const SIGNAL_SOURCE_ID = "borueyes-signals";
+const SIGNAL_GLOW_LAYER_ID = "borueyes-signal-glow";
+const SIGNAL_RING_LAYER_ID = "borueyes-signal-ring";
+const SIGNAL_CORE_LAYER_ID = "borueyes-signal-core";
+const SIGNAL_HIT_LAYER_ID = "borueyes-signal-hit";
 
 const CITY_LABELS = [
   { name: "Istanbul", coordinates: [28.9784, 41.0082], minZoom: 3 },
@@ -70,6 +76,12 @@ const DEFAULT_MARKER_PALETTE: MarkerPalette = {
   glow: "rgba(46, 235, 143, 0.22)",
 };
 
+const SIGNAL_TYPE_PALETTES: Record<OsintSignal["type"], MarkerPalette> = {
+  source: { fill: "#60A5FA", border: "#93C5FD", glow: "rgba(96,165,250,0.20)" },
+  electronic: { fill: "#4ADE80", border: "#86EFAC", glow: "rgba(74,222,128,0.22)" },
+  "early-warning": { fill: "#FBBF24", border: "#FCD34D", glow: "rgba(251,191,36,0.20)" },
+};
+
 const CATEGORY_MARKER_PALETTES: Partial<Record<OsintEvent["category"], MarkerPalette>> = {
   conflict: {
     fill: "#FF3B30",
@@ -103,6 +115,10 @@ interface Props {
   events: OsintEvent[];
   selectedId: string | null;
   onSelectEvent?: (id: string) => void;
+  signals?: OsintSignal[];
+  selectedSignalId?: string | null;
+  onSelectSignal?: (id: string) => void;
+  isSignalsMode?: boolean;
 }
 
 function setPaint(map: maplibregl.Map, layerId: string, property: string, value: unknown) {
@@ -118,29 +134,52 @@ function setLayout(map: maplibregl.Map, layerId: string, property: string, value
 }
 
 function applyDarkMapStyle(map: maplibregl.Map) {
-  setPaint(map, "background", "background-color", "#02070d");
-  setPaint(map, "countries-fill", "fill-color", "#071119");
+  setPaint(map, "background", "background-color", "#060606");
+  setPaint(map, "countries-fill", "fill-color", "#111111");
   setPaint(map, "countries-fill", "fill-opacity", 0.96);
-  setPaint(map, "crimea-fill", "fill-color", "#071119");
+  setPaint(map, "crimea-fill", "fill-color", "#111111");
   setPaint(map, "crimea-fill", "fill-opacity", 0.96);
-  setPaint(map, "coastline", "line-color", "rgba(44, 78, 104, 0.38)");
+  setPaint(map, "coastline", "line-color", "rgba(75, 75, 75, 0.38)");
   setPaint(map, "coastline", "line-blur", 0.7);
   setPaint(map, "coastline", "line-width", ["interpolate", ["linear"], ["zoom"], 1, 0.7, 6, 2.4]);
-  setPaint(map, "countries-boundary", "line-color", "rgba(89, 111, 137, 0.5)");
+  setPaint(map, "countries-boundary", "line-color", "rgba(95, 95, 95, 0.5)");
   setPaint(map, "countries-boundary", "line-opacity", ["interpolate", ["linear"], ["zoom"], 2, 0.2, 5, 0.52]);
   setPaint(map, "countries-boundary", "line-width", ["interpolate", ["linear"], ["zoom"], 1, 0.35, 6, 1.1]);
-  setPaint(map, "geolines", "line-color", "rgba(63, 90, 116, 0.42)");
+  setPaint(map, "geolines", "line-color", "rgba(75, 75, 75, 0.42)");
   setPaint(map, "geolines", "line-opacity", 0.28);
-  setPaint(map, "geolines-label", "text-color", "rgba(91, 116, 145, 0.55)");
-  setPaint(map, "geolines-label", "text-halo-color", "rgba(2, 7, 13, 0.78)");
+  setPaint(map, "geolines-label", "text-color", "rgba(100, 100, 100, 0.55)");
+  setPaint(map, "geolines-label", "text-halo-color", "rgba(6, 6, 6, 0.78)");
   setPaint(map, "geolines-label", "text-halo-width", 1);
-  setPaint(map, "countries-label", "text-color", "rgba(117, 137, 163, 0.66)");
-  setPaint(map, "countries-label", "text-halo-color", "rgba(2, 7, 13, 0.86)");
+  setPaint(map, "countries-label", "text-color", "rgba(130, 130, 130, 0.66)");
+  setPaint(map, "countries-label", "text-halo-color", "rgba(6, 6, 6, 0.86)");
   setPaint(map, "countries-label", "text-halo-width", 1.1);
   setPaint(map, "countries-label", "text-opacity", ["interpolate", ["linear"], ["zoom"], 2, 0.48, 4, 0.72, 6, 0.86]);
   setLayout(map, "countries-label", "text-field", "{NAME}");
   setLayout(map, "countries-label", "text-transform", "none");
   setLayout(map, "countries-label", "text-size", ["interpolate", ["linear"], ["zoom"], 2, 8.5, 4, 10.5, 6, 13]);
+}
+
+function applySignalMapStyle(map: maplibregl.Map) {
+  setPaint(map, "background", "background-color", "#010d06");
+  setPaint(map, "countries-fill", "fill-color", "#061209");
+  setPaint(map, "countries-fill", "fill-opacity", 0.97);
+  setPaint(map, "crimea-fill", "fill-color", "#061209");
+  setPaint(map, "crimea-fill", "fill-opacity", 0.97);
+  setPaint(map, "coastline", "line-color", "rgba(32,160,96,0.30)");
+  setPaint(map, "coastline", "line-blur", 0.7);
+  setPaint(map, "coastline", "line-width", ["interpolate", ["linear"], ["zoom"], 1, 0.7, 6, 2.4]);
+  setPaint(map, "countries-boundary", "line-color", "rgba(40,180,100,0.36)");
+  setPaint(map, "countries-boundary", "line-opacity", ["interpolate", ["linear"], ["zoom"], 2, 0.22, 5, 0.52]);
+  setPaint(map, "countries-boundary", "line-width", ["interpolate", ["linear"], ["zoom"], 1, 0.35, 6, 1.1]);
+  setPaint(map, "geolines", "line-color", "rgba(28,140,80,0.34)");
+  setPaint(map, "geolines", "line-opacity", 0.28);
+  setPaint(map, "geolines-label", "text-color", "rgba(60,180,110,0.46)");
+  setPaint(map, "geolines-label", "text-halo-color", "rgba(1,13,6,0.82)");
+  setPaint(map, "geolines-label", "text-halo-width", 1);
+  setPaint(map, "countries-label", "text-color", "rgba(80,200,130,0.55)");
+  setPaint(map, "countries-label", "text-halo-color", "rgba(1,13,6,0.86)");
+  setPaint(map, "countries-label", "text-halo-width", 1.1);
+  setPaint(map, "countries-label", "text-opacity", ["interpolate", ["linear"], ["zoom"], 2, 0.48, 4, 0.72, 6, 0.86]);
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -151,16 +190,16 @@ function darkenStyleJson(base: Record<string, any>): Record<string, any> {
     const l: Record<string, any> = layer.layout ?? {};
     switch (layer.id) {
       case "background":
-        layer.paint = { ...p, "background-color": "#02070d" };
+        layer.paint = { ...p, "background-color": "#060606" };
         break;
       case "countries-fill":
       case "crimea-fill":
-        layer.paint = { ...p, "fill-color": "#071119", "fill-opacity": 0.96 };
+        layer.paint = { ...p, "fill-color": "#111111", "fill-opacity": 0.96 };
         break;
       case "coastline":
         layer.paint = {
           ...p,
-          "line-color": "rgba(44, 78, 104, 0.38)",
+          "line-color": "rgba(75, 75, 75, 0.38)",
           "line-blur": 0.7,
           "line-width": ["interpolate", ["linear"], ["zoom"], 1, 0.7, 6, 2.4],
         };
@@ -168,27 +207,27 @@ function darkenStyleJson(base: Record<string, any>): Record<string, any> {
       case "countries-boundary":
         layer.paint = {
           ...p,
-          "line-color": "rgba(89, 111, 137, 0.5)",
+          "line-color": "rgba(95, 95, 95, 0.5)",
           "line-opacity": ["interpolate", ["linear"], ["zoom"], 2, 0.2, 5, 0.52],
           "line-width": ["interpolate", ["linear"], ["zoom"], 1, 0.35, 6, 1.1],
         };
         break;
       case "geolines":
-        layer.paint = { ...p, "line-color": "rgba(63, 90, 116, 0.42)", "line-opacity": 0.28 };
+        layer.paint = { ...p, "line-color": "rgba(75, 75, 75, 0.42)", "line-opacity": 0.28 };
         break;
       case "geolines-label":
         layer.paint = {
           ...p,
-          "text-color": "rgba(91, 116, 145, 0.55)",
-          "text-halo-color": "rgba(2, 7, 13, 0.78)",
+          "text-color": "rgba(100, 100, 100, 0.55)",
+          "text-halo-color": "rgba(6, 6, 6, 0.78)",
           "text-halo-width": 1,
         };
         break;
       case "countries-label":
         layer.paint = {
           ...p,
-          "text-color": "rgba(117, 137, 163, 0.66)",
-          "text-halo-color": "rgba(2, 7, 13, 0.86)",
+          "text-color": "rgba(130, 130, 130, 0.66)",
+          "text-halo-color": "rgba(6, 6, 6, 0.86)",
           "text-halo-width": 1.1,
           "text-opacity": ["interpolate", ["linear"], ["zoom"], 2, 0.48, 4, 0.72, 6, 0.86],
         };
@@ -284,6 +323,100 @@ function eventsCollection(
   };
 }
 
+function signalsCollection(signals: OsintSignal[], selectedSignalId: string | null): GeoJSON.FeatureCollection<GeoJSON.Point> {
+  return {
+    type: "FeatureCollection",
+    features: signals.map((signal) => {
+      const palette = SIGNAL_TYPE_PALETTES[signal.type];
+      return {
+        type: "Feature",
+        properties: {
+          id: signal.id,
+          type: signal.type,
+          confidence: signal.confidence,
+          fillColor: palette.fill,
+          borderColor: palette.border,
+          glowColor: palette.glow,
+          selected: signal.id === selectedSignalId,
+        },
+        geometry: {
+          type: "Point",
+          coordinates: [signal.coordinates.lng, signal.coordinates.lat],
+        },
+      };
+    }),
+  };
+}
+
+function addSignalLayers(map: maplibregl.Map) {
+  if (!map.getSource(SIGNAL_SOURCE_ID)) {
+    map.addSource(SIGNAL_SOURCE_ID, { type: "geojson", data: signalsCollection([], null) });
+  }
+
+  if (!map.getLayer(SIGNAL_GLOW_LAYER_ID)) {
+    map.addLayer({
+      id: SIGNAL_GLOW_LAYER_ID,
+      type: "circle",
+      source: SIGNAL_SOURCE_ID,
+      paint: {
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 3, 13, 6, 20],
+        "circle-color": ["to-color", ["get", "glowColor"]],
+        "circle-opacity": 1,
+        "circle-blur": 0.65,
+      },
+    });
+  }
+
+  if (!map.getLayer(SIGNAL_RING_LAYER_ID)) {
+    map.addLayer({
+      id: SIGNAL_RING_LAYER_ID,
+      type: "circle",
+      source: SIGNAL_SOURCE_ID,
+      filter: ["==", ["get", "selected"], true],
+      paint: {
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 3, 8, 6, 11],
+        "circle-color": "rgba(0,0,0,0)",
+        "circle-stroke-color": "rgba(74,222,128,0.8)",
+        "circle-stroke-width": 1.2,
+        "circle-opacity": 1,
+      },
+    });
+  }
+
+  if (!map.getLayer(SIGNAL_CORE_LAYER_ID)) {
+    map.addLayer({
+      id: SIGNAL_CORE_LAYER_ID,
+      type: "circle",
+      source: SIGNAL_SOURCE_ID,
+      paint: {
+        "circle-radius": ["case", ["==", ["get", "selected"], true], 5.2, 3.8],
+        "circle-color": ["to-color", ["get", "fillColor"]],
+        "circle-opacity": ["case", ["==", ["get", "selected"], true], 0.96, 0.88],
+        "circle-stroke-color": ["to-color", ["get", "borderColor"]],
+        "circle-stroke-width": ["case", ["==", ["get", "selected"], true], 1.1, 0.75],
+      },
+    });
+  }
+
+  if (!map.getLayer(SIGNAL_HIT_LAYER_ID)) {
+    map.addLayer({
+      id: SIGNAL_HIT_LAYER_ID,
+      type: "circle",
+      source: SIGNAL_SOURCE_ID,
+      paint: {
+        "circle-radius": 14,
+        "circle-color": "rgba(0,0,0,0)",
+        "circle-opacity": 0.01,
+      },
+    });
+  }
+}
+
+function updateSignalSource(map: maplibregl.Map, signals: OsintSignal[], selectedSignalId: string | null) {
+  const source = map.getSource(SIGNAL_SOURCE_ID) as maplibregl.GeoJSONSource | undefined;
+  source?.setData(signalsCollection(signals, selectedSignalId));
+}
+
 function addDetailLabelLayers(map: maplibregl.Map) {
   if (!map.getSource(CITY_SOURCE_ID)) {
     map.addSource(CITY_SOURCE_ID, {
@@ -309,8 +442,8 @@ function addDetailLabelLayers(map: maplibregl.Map) {
         "text-ignore-placement": false,
       },
       paint: {
-        "text-color": "rgba(170, 187, 208, 0.8)",
-        "text-halo-color": "rgba(2, 7, 13, 0.88)",
+        "text-color": "rgba(175, 175, 175, 0.8)",
+        "text-halo-color": "rgba(8, 8, 8, 0.88)",
         "text-halo-width": 1.25,
         "text-opacity": ["interpolate", ["linear"], ["zoom"], 3, 0.68, 5.5, 0.86],
       },
@@ -334,8 +467,8 @@ function addDetailLabelLayers(map: maplibregl.Map) {
         "text-ignore-placement": false,
       },
       paint: {
-        "text-color": "rgba(160, 176, 197, 0.68)",
-        "text-halo-color": "rgba(2, 7, 13, 0.88)",
+        "text-color": "rgba(165, 165, 165, 0.68)",
+        "text-halo-color": "rgba(8, 8, 8, 0.88)",
         "text-halo-width": 1,
         "text-opacity": ["interpolate", ["linear"], ["zoom"], 4.4, 0.42, 6, 0.74],
       },
@@ -364,8 +497,8 @@ function addDetailLabelLayers(map: maplibregl.Map) {
         "text-ignore-placement": false,
       },
       paint: {
-        "text-color": "rgba(88, 123, 158, 0.56)",
-        "text-halo-color": "rgba(2, 7, 13, 0.82)",
+        "text-color": "rgba(100, 100, 100, 0.56)",
+        "text-halo-color": "rgba(8, 8, 8, 0.82)",
         "text-halo-width": 1,
         "text-opacity": ["interpolate", ["linear"], ["zoom"], 3, 0.42, 5, 0.66],
       },
@@ -387,8 +520,8 @@ function addDetailLabelLayers(map: maplibregl.Map) {
         "text-ignore-placement": false,
       },
       paint: {
-        "text-color": "rgba(77, 112, 148, 0.46)",
-        "text-halo-color": "rgba(2, 7, 13, 0.82)",
+        "text-color": "rgba(90, 90, 90, 0.46)",
+        "text-halo-color": "rgba(8, 8, 8, 0.82)",
         "text-halo-width": 1,
         "text-opacity": ["interpolate", ["linear"], ["zoom"], 3.9, 0.28, 5.2, 0.58],
       },
@@ -478,15 +611,20 @@ function updateEventSource(map: maplibregl.Map, events: OsintEvent[], selectedId
   source?.setData(eventsCollection(events, selectedId));
 }
 
-export function GlobeMap({ events, selectedId, onSelectEvent }: Props) {
+export function GlobeMap({ events, selectedId, onSelectEvent, signals = [], selectedSignalId = null, onSelectSignal, isSignalsMode = false }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const onSelectEventRef = useRef(onSelectEvent);
+  const onSelectSignalRef = useRef(onSelectSignal);
   const [styleReady, setStyleReady] = useState(false);
 
   useEffect(() => {
     onSelectEventRef.current = onSelectEvent;
   }, [onSelectEvent]);
+
+  useEffect(() => {
+    onSelectSignalRef.current = onSelectSignal;
+  }, [onSelectSignal]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -523,6 +661,7 @@ export function GlobeMap({ events, selectedId, onSelectEvent }: Props) {
         applyDarkMapStyle(map!);
         addDetailLabelLayers(map!);
         addEventLayers(map!);
+        addSignalLayers(map!);
         map!.resize();
         // "render" fires from MapLibre's own GL draw loop — first dark frame is on canvas
         map!.once("render", () => {
@@ -542,6 +681,21 @@ export function GlobeMap({ events, selectedId, onSelectEvent }: Props) {
       });
 
       map.on("mouseleave", EVENT_HIT_LAYER_ID, () => {
+        map!.getCanvas().style.cursor = "";
+      });
+
+      map.on("click", SIGNAL_HIT_LAYER_ID, (event) => {
+        const id = event.features?.[0]?.properties?.id;
+        if (typeof id === "string") {
+          onSelectSignalRef.current?.(id);
+        }
+      });
+
+      map.on("mouseenter", SIGNAL_HIT_LAYER_ID, () => {
+        map!.getCanvas().style.cursor = "pointer";
+      });
+
+      map.on("mouseleave", SIGNAL_HIT_LAYER_ID, () => {
         map!.getCanvas().style.cursor = "";
       });
     }
@@ -564,21 +718,39 @@ export function GlobeMap({ events, selectedId, onSelectEvent }: Props) {
     updateEventSource(map, events, selectedId);
   }, [events, selectedId, styleReady]);
 
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !styleReady) return;
+    updateSignalSource(map, signals, selectedSignalId ?? null);
+  }, [signals, selectedSignalId, styleReady]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !styleReady) return;
+    if (isSignalsMode) {
+      applySignalMapStyle(map);
+    } else {
+      applyDarkMapStyle(map);
+    }
+  }, [isSignalsMode, styleReady]);
+
   return (
-    <div className="absolute inset-0 bg-[#020810]">
+    <div className="absolute inset-0 bg-[#080808]">
       <div ref={containerRef} className="absolute inset-0 h-full w-full" />
       <div
         className="pointer-events-none absolute inset-0"
         style={{
-          background:
-            "radial-gradient(circle at 50% 45%, rgba(59,130,246,0.04) 0%, rgba(2,8,16,0) 42%, rgba(1,5,8,0.56) 100%)",
+          background: isSignalsMode
+            ? "radial-gradient(circle at 50% 45%, rgba(74,222,128,0.05) 0%, rgba(1,13,6,0) 42%, rgba(0,8,4,0.56) 100%)"
+            : "radial-gradient(circle at 50% 45%, rgba(59,130,246,0.04) 0%, rgba(8,8,8,0) 42%, rgba(4,4,4,0.56) 100%)",
+          transition: "background 0.6s ease",
         }}
       />
       {/* Dark mask above the canvas — fades out only after idle + rAF confirms dark frame is painted */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
-          background: "#020810",
+          background: "#080808",
           opacity: styleReady ? 0 : 1,
           transition: "opacity 0.1s ease",
           zIndex: 5,

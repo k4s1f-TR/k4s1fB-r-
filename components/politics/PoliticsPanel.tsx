@@ -46,9 +46,15 @@ type SignalRowData = {
   value: string;
   change?: string;
   up?: boolean;
+  detail?: {
+    left: string;
+    leftUp: boolean;
+    right: string;
+    rightUp: boolean;
+  };
 };
 
-const GEO_ECON_ROWS: SignalRowData[] = [
+const GLOBAL_ECON_ROWS: SignalRowData[] = [
   { label: "USD/TRY",   value: "32.84", change: "+0.42%", up: true  },
   { label: "EUR/TRY",   value: "35.21", change: "-0.18%", up: false },
   { label: "GBP/TRY",   value: "41.15", change: "+0.61%", up: true  },
@@ -60,16 +66,30 @@ const TR_BIST_ROWS: SignalRowData[] = [
   { label: "BIST 100",  value: "9,842",    change: "+1.24%", up: true },
   { label: "BIST 30",   value: "10,215",   change: "+1.38%", up: true },
   { label: "ASELS",     value: "128.60",   change: "+2.10%", up: true },
-  { label: "Volume",    value: "42.3B"                                 },
-  { label: "Adv / Dec", value: "312 / 187"                            },
+  { label: "Volume",    value: "42.3 Billion"                          },
+  {
+    label: "Advancers / Decliners",
+    value: "",
+    detail: { left: "312", leftUp: true, right: "187", rightUp: false },
+  },
+];
+
+const CRYPTO_ROWS: SignalRowData[] = [
+  { label: "BTC", value: "64,820", change: "+1.12%", up: true },
+  { label: "ETH", value: "3,180", change: "+0.74%", up: true },
+  { label: "BNB", value: "582.4", change: "-0.29%", up: false },
+  { label: "SOL", value: "148.6", change: "+2.06%", up: true },
+  { label: "XRP", value: "0.532", change: "-0.41%", up: false },
 ];
 
 /* ─── Side panel sub-components ────────────────────────────────── */
-function SignalRow({ label, value, change, up }: SignalRowData) {
+function SignalRow({ label, value, change, up, detail }: SignalRowData) {
   const changeColor =
     up === true  ? "rgba(74,222,128,0.85)"
     : up === false ? "rgba(239,68,68,0.85)"
     : "rgba(90,90,90,0.8)";
+  const detailUpColor = "rgba(74,222,128,0.85)";
+  const detailDownColor = "rgba(239,68,68,0.85)";
   return (
     <div
       className="flex items-center justify-between"
@@ -87,6 +107,26 @@ function SignalRow({ label, value, change, up }: SignalRowData) {
         >
           {value}
         </span>
+        {detail && (
+          <div
+            className="flex items-center gap-1"
+            style={{
+              fontSize: "9.5px",
+              fontWeight: 600,
+              fontVariantNumeric: "tabular-nums",
+            }}
+          >
+            <span style={{ color: "rgba(195,205,220,0.9)" }}>{detail.left}</span>
+            <span style={{ color: detail.leftUp ? detailUpColor : detailDownColor }}>
+              {detail.leftUp ? "▲" : "▼"}
+            </span>
+            <span style={{ color: "rgba(90,90,90,0.8)" }}>/</span>
+            <span style={{ color: "rgba(195,205,220,0.9)" }}>{detail.right}</span>
+            <span style={{ color: detail.rightUp ? detailUpColor : detailDownColor }}>
+              {detail.rightUp ? "▲" : "▼"}
+            </span>
+          </div>
+        )}
         {change !== undefined && (
           <span style={{ fontSize: "9.5px", fontWeight: 600, color: changeColor }}>
             {up === true ? "▲" : up === false ? "▼" : ""}{change}
@@ -97,11 +137,17 @@ function SignalRow({ label, value, change, up }: SignalRowData) {
   );
 }
 
-function GeoEconSignalsPanel() {
+function CompactMarketPanel({
+  title,
+  rows,
+}: {
+  title: string;
+  rows: SignalRowData[];
+}) {
   return (
     <div
       style={{
-        width: "220px",
+        width: "100%",
         background: "rgba(12,12,12,0.97)",
         border: "1px solid rgba(255,255,255,0.07)",
         borderRadius: "10px",
@@ -110,47 +156,15 @@ function GeoEconSignalsPanel() {
     >
       <p
         style={{
-          fontSize: "9px",
+          fontSize: "10.5px",
           fontWeight: 700,
-          letterSpacing: "0.12em",
-          textTransform: "uppercase",
-          color: "rgba(100,100,100,0.75)",
+          color: "rgba(175,185,200,0.88)",
           marginBottom: "8px",
         }}
       >
-        Geo-Econ Signals
+        {title}
       </p>
-      {GEO_ECON_ROWS.map((row) => (
-        <SignalRow key={row.label} {...row} />
-      ))}
-    </div>
-  );
-}
-
-function TrBistSignalsPanel() {
-  return (
-    <div
-      style={{
-        width: "220px",
-        background: "rgba(12,12,12,0.97)",
-        border: "1px solid rgba(255,255,255,0.07)",
-        borderRadius: "10px",
-        padding: "12px 14px",
-      }}
-    >
-      <p
-        style={{
-          fontSize: "9px",
-          fontWeight: 700,
-          letterSpacing: "0.12em",
-          textTransform: "uppercase",
-          color: "rgba(100,100,100,0.75)",
-          marginBottom: "8px",
-        }}
-      >
-        TR-BIST Signals
-      </p>
-      {TR_BIST_ROWS.map((row) => (
+      {rows.map((row) => (
         <SignalRow key={row.label} {...row} />
       ))}
     </div>
@@ -266,9 +280,7 @@ export function PoliticsPanel({ events }: { events: OsintEvent[] }) {
       style={{ background: "rgba(10,10,10,0.97)" }}
     >
       {/* Left panel area */}
-      <div className="flex-1 flex items-start justify-end py-4 pr-3">
-        <GeoEconSignalsPanel />
-      </div>
+      <div className="flex-1" />
 
       {/* ── Center column ───────────────────────────── */}
       <div
@@ -404,8 +416,13 @@ export function PoliticsPanel({ events }: { events: OsintEvent[] }) {
       </div>
 
       {/* Right panel area */}
-      <div className="flex-1 flex items-start justify-start py-4 pl-3">
-        <TrBistSignalsPanel />
+      <div
+        className="flex flex-col flex-shrink-0 gap-3 py-4 pl-3 pr-4"
+        style={{ width: "268px" }}
+      >
+        <CompactMarketPanel title="Global Economics" rows={GLOBAL_ECON_ROWS} />
+        <CompactMarketPanel title="TR-BIST Economics" rows={TR_BIST_ROWS} />
+        <CompactMarketPanel title="Crypto Assets" rows={CRYPTO_ROWS} />
       </div>
     </div>
   );

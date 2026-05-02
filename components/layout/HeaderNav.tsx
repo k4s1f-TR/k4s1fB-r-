@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Search, Bell, Sun } from "lucide-react";
+import { Sun } from "lucide-react";
 import type { ReactNode } from "react";
 
 type TopNavTab = "situation" | "politics" | "sources";
@@ -9,8 +9,6 @@ const NAV_TABS: { label: string; key?: TopNavTab }[] = [
   { label: "Situation", key: "situation" },
   { label: "Politics", key: "politics" },
   { label: "Intel Watch" },
-  { label: "Air" },
-  { label: "Maritime" },
   { label: "Sources", key: "sources" },
 ];
 
@@ -141,23 +139,6 @@ export function HeaderNav({
           }}
         >
           {clock}
-        </div>
-
-        <IconBtn>
-          <Search size={14} />
-        </IconBtn>
-
-        <div className="relative">
-          <IconBtn>
-            <Bell size={14} />
-          </IconBtn>
-          <span
-            className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full pointer-events-none"
-            style={{
-              background: "#3b82f6",
-              boxShadow: "0 0 5px rgba(59,130,246,0.7)",
-            }}
-          />
         </div>
 
         <IconBtn>

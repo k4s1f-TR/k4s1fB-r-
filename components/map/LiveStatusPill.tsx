@@ -25,21 +25,6 @@ export function LiveStatusPill() {
           03:42 UTC
         </span>
       </div>
-      <div className="flex items-center gap-1.5">
-        <span
-          className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-          style={{
-            background: "#4ade80",
-            boxShadow: "0 0 5px rgba(74,222,128,0.6)",
-          }}
-        />
-        <span
-          className="font-medium"
-          style={{ fontSize: "10.5px", color: "rgba(74,222,128,0.85)" }}
-        >
-          Live
-        </span>
-      </div>
     </div>
   );
 }

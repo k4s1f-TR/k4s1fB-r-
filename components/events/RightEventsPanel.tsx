@@ -1,5 +1,5 @@
 "use client";
-import { SlidersHorizontal, ArrowRight } from "lucide-react";
+import { SlidersHorizontal } from "lucide-react";
 import { OsintEvent } from "@/types/event";
 import { EventCard } from "./EventCard";
 
@@ -68,28 +68,6 @@ export function RightEventsPanel({
             onClick={() => onSelect(event.id)}
           />
         ))}
-      </div>
-
-      {/* Footer */}
-      <div
-        className="flex-shrink-0 px-4 py-2.5"
-        style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
-      >
-        <button
-          className="flex items-center gap-1.5 transition-colors duration-150"
-          style={{ fontSize: "11px", color: "rgba(96,165,250,0.75)" }}
-          onMouseEnter={(e) =>
-            ((e.currentTarget as HTMLElement).style.color =
-              "rgba(147,197,253,0.9)")
-          }
-          onMouseLeave={(e) =>
-            ((e.currentTarget as HTMLElement).style.color =
-              "rgba(96,165,250,0.75)")
-          }
-        >
-          View all results
-          <ArrowRight size={11} />
-        </button>
       </div>
     </div>
   );

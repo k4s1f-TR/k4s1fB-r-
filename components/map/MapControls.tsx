@@ -1,19 +1,36 @@
 "use client";
-import { Crosshair, Globe, Plus, Minus } from "lucide-react";
+import { Crosshair, Plus, Minus } from "lucide-react";
 
 const BTNS = [
-  { icon: Crosshair, label: "Center view" },
-  { icon: Globe, label: "Globe view" },
-  { icon: Plus, label: "Zoom in" },
-  { icon: Minus, label: "Zoom out" },
-];
+  { icon: Crosshair, label: "Center view", action: "center" },
+  { icon: Plus, label: "Zoom in", action: "zoomIn" },
+  { icon: Minus, label: "Zoom out", action: "zoomOut" },
+] as const;
 
-export function MapControls() {
+interface MapControlsProps {
+  onCenterView: () => void;
+  onZoomIn: () => void;
+  onZoomOut: () => void;
+}
+
+export function MapControls({
+  onCenterView,
+  onZoomIn,
+  onZoomOut,
+}: MapControlsProps) {
+  const handlers = {
+    center: onCenterView,
+    zoomIn: onZoomIn,
+    zoomOut: onZoomOut,
+  };
+
   return (
     <div className="absolute bottom-12 right-4 flex flex-col gap-1 z-10">
-      {BTNS.map(({ icon: Icon, label }) => (
+      {BTNS.map(({ icon: Icon, label, action }) => (
         <button
           key={label}
+          type="button"
+          onClick={handlers[action]}
           title={label}
           aria-label={label}
           className="w-7 h-7 flex items-center justify-center rounded-lg transition-all duration-150"

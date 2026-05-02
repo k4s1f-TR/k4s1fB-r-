@@ -1,8 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Radio } from "lucide-react";
-import { mockSignals } from "@/data/mockSignals";
-import type { SignalType } from "@/types/signal";
+import type { OsintSignal, SignalType } from "@/types/signal";
 import { SIGNAL_TYPE_OPTIONS } from "@/types/signal";
 
 const TYPE_COLORS: Record<SignalType, { badge: string; text: string }> = {
@@ -33,17 +32,19 @@ function confidenceColor(score: number): string {
 }
 
 export function SignalsPanel({
+  signals,
   confidenceMin,
   selectedId,
   onSelect,
 }: {
+  signals: OsintSignal[];
   confidenceMin: number;
   selectedId: string | null;
   onSelect: (id: string) => void;
 }) {
   const [activeType, setActiveType] = useState<SignalType | "all">("all");
 
-  const displayed = mockSignals
+  const displayed = signals
     .filter((s) => s.confidence >= confidenceMin)
     .filter((s) => activeType === "all" || s.type === activeType);
 

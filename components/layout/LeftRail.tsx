@@ -14,7 +14,7 @@ import type { ViewMode } from "./AppShell";
 
 const topIcons: { icon: React.ElementType; label: string; viewKey?: ViewMode }[] = [
   { icon: Globe, label: "Global View", viewKey: "global" },
-  { icon: Radio, label: "Signals/Radar", viewKey: "signals" },
+  { icon: Radio, label: "Signals", viewKey: "signals" },
   { icon: Plane, label: "Air Track" },
   { icon: Ship, label: "Ship Track" },
   { icon: Bookmark, label: "Bookmarks" },
@@ -81,9 +81,11 @@ function RailIcon({
 export function LeftRail({
   activeView,
   onViewChange,
+  onHome,
 }: {
   activeView: ViewMode | null;
   onViewChange: (view: ViewMode) => void;
+  onHome: () => void;
 }) {
   return (
     <div
@@ -97,7 +99,11 @@ export function LeftRail({
     >
       {/* Logo mark */}
       <div className="mb-5 mt-1">
-        <div
+        <button
+          type="button"
+          title="Monitor home"
+          aria-label="Monitor home"
+          onClick={onHome}
           className="w-8 h-8 rounded-[9px] flex items-center justify-center"
           style={{
             background: "linear-gradient(145deg, #0f2545 0%, #091830 100%)",
@@ -106,7 +112,7 @@ export function LeftRail({
           }}
         >
           <Eye size={16} strokeWidth={1.6} color="rgba(96,165,250,0.9)" />
-        </div>
+        </button>
       </div>
 
       {/* Primary nav icons */}

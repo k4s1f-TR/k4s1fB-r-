@@ -1,6 +1,6 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
-import { ChevronDown, Globe2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Globe2 } from "lucide-react";
 import type { ViewMode } from "@/components/layout/AppShell";
 import type { RegionKey, EventCategory } from "@/types/event";
 import { REGION_OPTIONS, CATEGORY_OPTIONS } from "@/types/event";
@@ -54,6 +54,7 @@ export function FloatingMonitoringCard({
 }: Props) {
   const [regionOpen, setRegionOpen] = useState(false);
   const [categoryOpen, setCategoryOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
   const isGlobal = view === "global";
@@ -79,6 +80,32 @@ export function FloatingMonitoringCard({
     return () => document.removeEventListener("mousedown", onMouseDown);
   }, [regionOpen, categoryOpen]);
 
+  if (collapsed) {
+    return (
+      <button
+        className="absolute top-4 left-4 rounded-xl z-10 flex items-center gap-2"
+        onClick={() => setCollapsed(false)}
+        style={{
+          padding: "10px 12px",
+          background: "rgba(12,12,12,0.9)",
+          border: "1px solid rgba(255,255,255,0.07)",
+          backdropFilter: "blur(14px)",
+          boxShadow:
+            "0 8px 32px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.04) inset",
+        }}
+      >
+        <Globe2 size={10} style={{ color: "rgba(100,100,100,0.74)" }} />
+        <span style={{ fontSize: "10px", fontWeight: 700, color: "rgba(185,195,210,0.9)", letterSpacing: "0.08em" }}>
+          Monitor
+        </span>
+        <ChevronRight
+          size={12}
+          style={{ color: "rgba(100,100,100,0.78)" }}
+        />
+      </button>
+    );
+  }
+
   return (
     <div
       ref={cardRef}
@@ -93,10 +120,29 @@ export function FloatingMonitoringCard({
           "0 8px 32px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.04) inset",
       }}
     >
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-1.5">
+          <Globe2 size={9} style={{ color: "rgba(100,100,100,0.7)" }} />
+          <span className="tracking-widest uppercase" style={LABEL_STYLE}>
+            Monitor
+          </span>
+        </div>
+        <button
+          onClick={() => {
+            setRegionOpen(false);
+            setCategoryOpen(false);
+            setCollapsed(true);
+          }}
+          aria-label="Collapse monitoring card"
+          style={{ color: "rgba(100,100,100,0.8)" }}
+        >
+          <ChevronRight size={13} style={{ transform: "rotate(180deg)" }} />
+        </button>
+      </div>
+
       {/* Monitoring Region */}
       <div className="mb-3" style={{ position: "relative" }}>
         <div className="flex items-center gap-1.5 mb-1">
-          <Globe2 size={9} style={{ color: "rgba(100,100,100,0.7)" }} />
           <span className="tracking-widest uppercase" style={LABEL_STYLE}>
             Monitoring Region
           </span>

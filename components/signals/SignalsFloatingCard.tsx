@@ -1,14 +1,17 @@
 "use client";
-import { Radio } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ChevronDown, ChevronRight, Radio } from "lucide-react";
 import { mockSignals } from "@/data/mockSignals";
-import { radarSites } from "@/data/signals/radarSites";
 import type { SignalType } from "@/types/signal";
+import { REGION_OPTIONS, type RegionKey } from "@/types/event";
+
+type SignalCoverage = RegionKey | "global";
 
 interface Props {
+  activeRegion: SignalCoverage;
   confidenceMin: number;
+  onRegionChange: (region: SignalCoverage) => void;
   onConfidenceChange: (min: number) => void;
-  showRadarSites: boolean;
-  onToggleRadarSites: () => void;
 }
 
 const LABEL_STYLE = {
@@ -19,9 +22,17 @@ const LABEL_STYLE = {
 
 const THRESHOLD_OPTIONS: { label: string; value: number }[] = [
   { label: "All", value: 0 },
-  { label: "Med+", value: 40 },
-  { label: "High+", value: 70 },
+  { label: "Low", value: 20 },
+  { label: "Med.", value: 40 },
+  { label: "High", value: 70 },
 ];
+
+const DROPDOWN_STYLE = {
+  background: "rgba(12,12,12,0.98)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  backdropFilter: "blur(14px)",
+  boxShadow: "0 8px 24px rgba(0,0,0,0.6)",
+} as const;
 
 const TYPE_COLORS: Record<SignalType, string> = {
   source: "rgba(96,165,250,0.85)",
@@ -37,47 +48,190 @@ const TYPE_LABELS: Record<SignalType, string> = {
 
 const SIGNAL_TYPES: SignalType[] = ["source", "electronic", "early-warning"];
 
-export function SignalsFloatingCard({ confidenceMin, onConfidenceChange, showRadarSites, onToggleRadarSites }: Props) {
-  const filtered = mockSignals.filter((s) => s.confidence >= confidenceMin);
+function itemStyle(active: boolean) {
+  return {
+    display: "block" as const,
+    width: "100%",
+    textAlign: "left" as const,
+    padding: "7px 12px",
+    fontSize: "12px",
+    color: active ? "rgba(147,197,253,0.9)" : "rgba(170,170,170,0.8)",
+    background: active ? "rgba(59,130,246,0.08)" : "transparent",
+    cursor: "pointer",
+  };
+}
+
+export function SignalsFloatingCard({
+  activeRegion,
+  confidenceMin,
+  onRegionChange,
+  onConfidenceChange,
+}: Props) {
+  const [collapsed, setCollapsed] = useState(false);
+  const [regionOpen, setRegionOpen] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const filtered = mockSignals
+    .filter((s) => s.confidence >= confidenceMin)
+    .filter((s) => activeRegion === "global" || s.region === activeRegion);
+  const isGlobal = activeRegion === "global";
+  const regionLabel = isGlobal
+    ? "All Regions"
+    : REGION_OPTIONS.find((r) => r.key === activeRegion)?.label ?? "Middle East";
+  const regionSubtitle = isGlobal
+    ? "Global signal monitoring active"
+    : "Regional signal monitoring active";
+
+  useEffect(() => {
+    if (!regionOpen) return;
+    function onMouseDown(e: MouseEvent) {
+      if (cardRef.current && !cardRef.current.contains(e.target as Node)) {
+        setRegionOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onMouseDown);
+    return () => document.removeEventListener("mousedown", onMouseDown);
+  }, [regionOpen]);
+
+  if (collapsed) {
+    return (
+      <button
+        className="absolute top-4 left-4 rounded-xl z-10 flex items-center gap-2"
+        onClick={() => setCollapsed(false)}
+        style={{
+          padding: "10px 12px",
+          background: "rgba(12,12,12,0.9)",
+          border: "1px solid rgba(255,255,255,0.07)",
+          backdropFilter: "blur(14px)",
+          boxShadow:
+            "0 8px 32px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.04) inset",
+        }}
+      >
+        <Radio size={10} style={{ color: "rgba(96,165,250,0.78)" }} />
+        <span style={{ fontSize: "10px", fontWeight: 700, color: "rgba(185,195,210,0.9)", letterSpacing: "0.1em" }}>
+          SIGINT
+        </span>
+        <ChevronRight
+          size={12}
+          style={{ color: "rgba(100,100,100,0.78)" }}
+        />
+      </button>
+    );
+  }
 
   return (
     <div
+      ref={cardRef}
       className="absolute top-4 left-4 rounded-xl z-10"
       style={{
         padding: "14px 16px",
         background: "rgba(12,12,12,0.88)",
         border: "1px solid rgba(255,255,255,0.07)",
         backdropFilter: "blur(14px)",
-        minWidth: "206px",
+        width: "198px",
+        minWidth: "198px",
         boxShadow:
           "0 8px 32px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.04) inset",
       }}
     >
-      {/* Header */}
-      <div className="flex items-center gap-1.5 mb-3">
-        <Radio size={9} style={{ color: "rgba(96,165,250,0.7)" }} />
-        <span className="tracking-widest uppercase font-semibold" style={LABEL_STYLE}>
-          SIGINT Monitor
-        </span>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-1.5">
+          <Radio size={9} style={{ color: "rgba(96,165,250,0.7)" }} />
+          <span className="tracking-widest uppercase font-semibold" style={LABEL_STYLE}>
+            SIGINT Monitor
+          </span>
+        </div>
+        <button
+          onClick={() => setCollapsed(true)}
+          aria-label="Collapse signals card"
+          style={{ color: "rgba(100,100,100,0.8)" }}
+        >
+          <ChevronRight size={13} style={{ transform: "rotate(180deg)" }} />
+        </button>
       </div>
 
       {/* Signal coverage */}
-      <div className="mb-3">
+      <div className="mb-3" style={{ position: "relative" }}>
         <span className="tracking-widest uppercase block mb-1" style={LABEL_STYLE}>
           Signal Coverage
         </span>
-        <span
-          className="font-semibold"
-          style={{ fontSize: "14px", color: "rgba(210,210,210,0.95)" }}
+        <button
+          className="flex items-center justify-between w-full"
+          onClick={() => setRegionOpen((v) => !v)}
         >
-          All Regions
-        </span>
+          <span
+            className="font-semibold"
+            style={{ fontSize: "14px", color: "rgba(210,210,210,0.95)" }}
+          >
+            {regionLabel}
+          </span>
+          <ChevronDown
+            size={12}
+            style={{
+              color: "rgba(100,100,100,0.7)",
+              transform: regionOpen ? "rotate(180deg)" : undefined,
+              transition: "transform 150ms",
+            }}
+          />
+        </button>
         <span
           className="block mt-0.5"
           style={{ fontSize: "10.5px", color: "rgba(100,100,100,0.85)" }}
         >
-          Global signal monitoring active
+          {regionSubtitle}
         </span>
+
+        {regionOpen && (
+          <div
+            className="absolute left-0 right-0 mt-1 rounded-lg overflow-hidden"
+            style={{ top: "100%", zIndex: 200, ...DROPDOWN_STYLE }}
+          >
+            {REGION_OPTIONS.map((opt) => {
+              const active = activeRegion === opt.key;
+              return (
+                <button
+                  key={opt.key}
+                  style={itemStyle(active)}
+                  onMouseEnter={(e) => {
+                    if (!active)
+                      (e.currentTarget as HTMLElement).style.background =
+                        "rgba(255,255,255,0.04)";
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!active)
+                      (e.currentTarget as HTMLElement).style.background =
+                        "transparent";
+                  }}
+                  onClick={() => {
+                    onRegionChange(opt.key);
+                    setRegionOpen(false);
+                  }}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+            <div style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }} />
+            <button
+              style={itemStyle(isGlobal)}
+              onMouseEnter={(e) => {
+                if (!isGlobal)
+                  (e.currentTarget as HTMLElement).style.background =
+                    "rgba(255,255,255,0.04)";
+              }}
+              onMouseLeave={(e) => {
+                if (!isGlobal)
+                  (e.currentTarget as HTMLElement).style.background =
+                    "transparent";
+              }}
+              onClick={() => {
+                onRegionChange("global");
+                setRegionOpen(false);
+              }}
+            >
+              All Regions
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Confidence threshold */}
@@ -91,7 +245,7 @@ export function SignalsFloatingCard({ confidenceMin, onConfidenceChange, showRad
         <span className="tracking-widest uppercase block mb-2" style={LABEL_STYLE}>
           Min Confidence
         </span>
-        <div className="flex items-center gap-1.5">
+        <div className="flex flex-nowrap items-center gap-1">
           {THRESHOLD_OPTIONS.map((opt) => {
             const active = opt.value === confidenceMin;
             return (
@@ -99,10 +253,11 @@ export function SignalsFloatingCard({ confidenceMin, onConfidenceChange, showRad
                 key={opt.value}
                 onClick={() => onConfidenceChange(opt.value)}
                 style={{
-                  fontSize: "10px",
+                  fontSize: "9.5px",
                   fontWeight: 600,
-                  padding: "4px 10px",
+                  padding: "4px 7px",
                   borderRadius: "6px",
+                  whiteSpace: "nowrap",
                   color: active ? "rgba(147,197,253,0.95)" : "rgba(100,100,100,0.85)",
                   background: active ? "rgba(59,130,246,0.12)" : "rgba(255,255,255,0.03)",
                   border: active
@@ -123,6 +278,8 @@ export function SignalsFloatingCard({ confidenceMin, onConfidenceChange, showRad
         style={{
           borderTop: "1px solid rgba(255,255,255,0.05)",
           paddingTop: "11px",
+          maxHeight: "152px",
+          overflowY: "auto",
         }}
       >
         <span className="tracking-widest uppercase block mb-2" style={LABEL_STYLE}>
@@ -172,66 +329,6 @@ export function SignalsFloatingCard({ confidenceMin, onConfidenceChange, showRad
         </div>
       </div>
 
-      {/* Layers */}
-      <div
-        style={{
-          borderTop: "1px solid rgba(255,255,255,0.05)",
-          paddingTop: "11px",
-        }}
-      >
-        <span className="tracking-widest uppercase block mb-2" style={LABEL_STYLE}>
-          Layers
-        </span>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
-            <span style={{ fontSize: "10.5px", color: "rgba(140,140,140,0.85)" }}>
-              Radar Infrastructure
-            </span>
-            <span style={{ fontSize: "9px", color: "rgba(80,80,80,0.8)" }}>
-              {radarSites.length}
-            </span>
-          </div>
-          <button
-            onClick={onToggleRadarSites}
-            style={{
-              fontSize: "9.5px",
-              fontWeight: 600,
-              padding: "3px 8px",
-              borderRadius: "5px",
-              color: showRadarSites ? "rgba(196,181,253,0.95)" : "rgba(80,80,80,0.85)",
-              background: showRadarSites ? "rgba(167,139,250,0.12)" : "rgba(255,255,255,0.03)",
-              border: showRadarSites
-                ? "1px solid rgba(167,139,250,0.22)"
-                : "1px solid rgba(255,255,255,0.05)",
-              transition: "all 150ms",
-            }}
-          >
-            {showRadarSites ? "ON" : "OFF"}
-          </button>
-        </div>
-      </div>
-
-      {/* Attribution */}
-      <div
-        style={{
-          borderTop: "1px solid rgba(255,255,255,0.04)",
-          paddingTop: "8px",
-          marginTop: "8px",
-        }}
-      >
-        <span
-          style={{
-            fontSize: "8px",
-            color: "rgba(65,65,65,0.9)",
-            lineHeight: 1.6,
-            display: "block",
-          }}
-        >
-          Radar layer: ClimateViewer / Jim Lee
-          <br />
-          CC BY-NC-SA 4.0
-        </span>
-      </div>
     </div>
   );
 }

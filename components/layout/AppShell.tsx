@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { LeftRail } from "./LeftRail";
 import { HeaderNav } from "./HeaderNav";
-import { GlobeMap } from "@/components/map/GlobeMap";
+import { GlobeMap, type GlobeMapHandle } from "@/components/map/GlobeMap";
 import { FloatingMonitoringCard } from "@/components/map/FloatingMonitoringCard";
 import { MapControls } from "@/components/map/MapControls";
 import { LiveStatusPill } from "@/components/map/LiveStatusPill";
@@ -19,24 +19,30 @@ import type { EventCategory, RegionKey } from "@/types/event";
 export type ViewMode = "situation" | "global" | "signals";
 type ActiveSection = "dashboard" | "sources";
 type ActiveTopTab = "situation" | "politics" | "sources";
+type ActiveRailMode = "global" | "signals" | null;
+type SignalCoverage = RegionKey | "global";
 
 export function AppShell() {
+  const globeMapRef = useRef<GlobeMapHandle | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>("1");
   const [activeSection, setActiveSection] = useState<ActiveSection>("dashboard");
   const [activeTopTab, setActiveTopTab] = useState<ActiveTopTab>("situation");
+  const [activeRailMode, setActiveRailMode] = useState<ActiveRailMode>(null);
   const [activeView, setActiveView] = useState<ViewMode>("situation");
   const [activeRegion, setActiveRegion] = useState<RegionKey>("middle-east");
   const [activeCategory, setActiveCategory] = useState<EventCategory | "all">("all");
+  const [activeSignalRegion, setActiveSignalRegion] = useState<SignalCoverage>("global");
   const [signalConfidenceMin, setSignalConfidenceMin] = useState(0);
   const [selectedSignalId, setSelectedSignalId] = useState<string | null>(null);
-  const [showRadarSites, setShowRadarSites] = useState(false);
 
   const displayedSignals = useMemo(
     () =>
-      activeView === "signals"
-        ? mockSignals.filter((s) => s.confidence >= signalConfidenceMin)
+      activeRailMode === "signals"
+        ? mockSignals
+            .filter((s) => s.confidence >= signalConfidenceMin)
+            .filter((s) => activeSignalRegion === "global" || s.region === activeSignalRegion)
         : [],
-    [activeView, signalConfidenceMin],
+    [activeRailMode, activeSignalRegion, signalConfidenceMin],
   );
 
   const baseEvents = useMemo(
@@ -62,11 +68,33 @@ export function AppShell() {
     setActiveCategory("all");
     setSelectedId(null);
     setSelectedSignalId(null);
-    if (view === "situation") setActiveRegion("middle-east");
+    if (view === "global") {
+      setActiveRailMode("global");
+      return;
+    }
+    if (view === "signals") {
+      setActiveRailMode("signals");
+      return;
+    }
+    setActiveRailMode(null);
+    setActiveRegion("middle-east");
+  }
+
+  function handleHomeReset() {
+    setActiveSection("dashboard");
+    setActiveTopTab("situation");
+    setActiveRailMode(null);
+    setActiveView("situation");
+    setActiveRegion("middle-east");
+    setActiveCategory("all");
+    setSelectedId(null);
+    setSelectedSignalId(null);
   }
 
   function handleRegionChange(region: RegionKey) {
     setActiveSection("dashboard");
+    setActiveTopTab("situation");
+    setActiveRailMode("global");
     setActiveRegion(region);
     setActiveView("situation");
     setSelectedId(null);
@@ -89,12 +117,14 @@ export function AppShell() {
     if (tab === "sources") {
       setActiveSection("sources");
       setActiveTopTab("sources");
+      setActiveRailMode(null);
       return;
     }
 
     if (tab === "politics") {
       setActiveSection("dashboard");
       setActiveTopTab("politics");
+      setActiveRailMode("global");
       setActiveView("global");
       setActiveRegion("middle-east");
       setActiveCategory("politics");
@@ -118,8 +148,9 @@ export function AppShell() {
 
       <div className="flex flex-1 overflow-hidden">
         <LeftRail
-          activeView={activeSection === "dashboard" && activeTopTab === "situation" ? activeView : null}
+          activeView={activeSection === "dashboard" && activeTopTab === "situation" ? activeRailMode : null}
           onViewChange={handleViewChange}
+          onHome={handleHomeReset}
         />
 
         {activeSection === "sources" ? (
@@ -130,24 +161,26 @@ export function AppShell() {
           <>
             <div className="relative flex-1 overflow-hidden">
               <GlobeMap
-                events={activeView === "signals" ? [] : displayedEvents}
+                ref={globeMapRef}
+                events={activeRailMode === "global" ? displayedEvents : []}
                 selectedId={selectedId}
                 onSelectEvent={setSelectedId}
                 signals={displayedSignals}
                 selectedSignalId={selectedSignalId}
                 onSelectSignal={setSelectedSignalId}
-                isSignalsMode={activeView === "signals"}
-                showRadarSites={activeView === "signals" && showRadarSites}
               />
-              {activeView === "signals" && (
+              {activeRailMode === "signals" && (
                 <SignalsFloatingCard
+                  activeRegion={activeSignalRegion}
                   confidenceMin={signalConfidenceMin}
+                  onRegionChange={(region) => {
+                    setActiveSignalRegion(region);
+                    setSelectedSignalId(null);
+                  }}
                   onConfidenceChange={setSignalConfidenceMin}
-                  showRadarSites={showRadarSites}
-                  onToggleRadarSites={() => setShowRadarSites((v) => !v)}
                 />
               )}
-              {activeView !== "signals" && (
+              {activeRailMode === "global" && (
                 <FloatingMonitoringCard
                   view={activeView}
                   activeRegion={activeRegion}
@@ -159,19 +192,24 @@ export function AppShell() {
                   onCategoryChange={handleCategoryChange}
                 />
               )}
-              <MapControls />
-              <LiveStatusPill />
+              <MapControls
+                onCenterView={() => globeMapRef.current?.centerView()}
+                onZoomIn={() => globeMapRef.current?.zoomIn()}
+                onZoomOut={() => globeMapRef.current?.zoomOut()}
+              />
+              {activeRailMode !== null && <LiveStatusPill />}
             </div>
 
-            {activeView !== "signals" && (
+            {activeRailMode === "global" && (
               <RightEventsPanel
                 events={displayedEvents}
                 selectedId={selectedId}
                 onSelect={setSelectedId}
               />
             )}
-            {activeView === "signals" && (
+            {activeRailMode === "signals" && (
               <SignalsPanel
+                signals={displayedSignals}
                 confidenceMin={signalConfidenceMin}
                 selectedId={selectedSignalId}
                 onSelect={setSelectedSignalId}

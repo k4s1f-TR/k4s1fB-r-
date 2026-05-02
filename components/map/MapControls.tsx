@@ -11,12 +11,14 @@ interface MapControlsProps {
   onCenterView: () => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
+  panelOffset?: number;
 }
 
 export function MapControls({
   onCenterView,
   onZoomIn,
   onZoomOut,
+  panelOffset = 0,
 }: MapControlsProps) {
   const handlers = {
     center: onCenterView,
@@ -25,7 +27,14 @@ export function MapControls({
   };
 
   return (
-    <div className="absolute bottom-12 right-4 flex flex-col gap-1 z-10">
+    <div
+      className="absolute bottom-12 right-4 flex flex-col gap-1 z-10"
+      style={{
+        transform: `translateX(-${panelOffset}px)`,
+        transition: "transform 220ms ease",
+        willChange: "transform",
+      }}
+    >
       {BTNS.map(({ icon: Icon, label, action }) => (
         <button
           key={label}

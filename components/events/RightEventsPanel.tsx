@@ -1,5 +1,4 @@
 "use client";
-import { SlidersHorizontal } from "lucide-react";
 import { OsintEvent } from "@/types/event";
 import { EventCard } from "./EventCard";
 
@@ -16,11 +15,11 @@ export function RightEventsPanel({
 }: RightEventsPanelProps) {
   return (
     <div
-      className="flex flex-col h-full flex-shrink-0"
+      className="flex h-full max-h-full min-h-0 flex-shrink-0 flex-col overflow-hidden rounded-[10px]"
       style={{
-        width: "372px",
-        background: "rgba(10,10,10,0.95)",
-        borderLeft: "1px solid rgba(255,255,255,0.05)",
+        width: "100%",
+        background: "rgba(12,12,12,0.97)",
+        border: "1px solid rgba(255,255,255,0.07)",
       }}
     >
       {/* Panel header */}
@@ -34,29 +33,14 @@ export function RightEventsPanel({
         >
           Active Events
         </span>
-        <div className="flex items-center gap-2">
-          <span style={{ fontSize: "10.5px", color: "rgba(100,100,100,0.85)" }}>
-            {events.length} Results
-          </span>
-          <button
-            style={{ color: "rgba(90,90,90,0.85)" }}
-            onMouseEnter={(e) =>
-              ((e.currentTarget as HTMLElement).style.color =
-                "rgba(96,165,250,0.8)")
-            }
-            onMouseLeave={(e) =>
-              ((e.currentTarget as HTMLElement).style.color =
-                "rgba(90,90,90,0.85)")
-            }
-          >
-            <SlidersHorizontal size={12} />
-          </button>
-        </div>
+        <span style={{ fontSize: "10.5px", color: "rgba(100,100,100,0.85)" }}>
+          {events.length} Results
+        </span>
       </div>
 
       {/* Scrollable card list */}
       <div
-        className="flex-1 overflow-y-auto"
+        className="min-h-0 flex-1 overflow-y-auto"
         style={{ padding: "8px 10px", display: "flex", flexDirection: "column", gap: "6px" }}
       >
         {events.map((event, i) => (

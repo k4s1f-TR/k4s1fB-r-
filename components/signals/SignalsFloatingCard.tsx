@@ -1,9 +1,13 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronRight, Radio } from "lucide-react";
-import { mockSignals } from "@/data/mockSignals";
-import type { SignalType } from "@/types/signal";
+import { socmintReports } from "@/data/socmintReports";
 import { REGION_OPTIONS, type RegionKey } from "@/types/event";
+import type { SocmintReportType } from "@/types/socmint";
+import {
+  SOCMINT_TYPE_LABELS,
+  socmintMatchesConfidenceFilter,
+} from "@/types/socmint";
 
 type SignalCoverage = RegionKey | "global";
 
@@ -34,19 +38,19 @@ const DROPDOWN_STYLE = {
   boxShadow: "0 8px 24px rgba(0,0,0,0.6)",
 } as const;
 
-const TYPE_COLORS: Record<SignalType, string> = {
-  source: "rgba(96,165,250,0.85)",
-  electronic: "rgba(74,222,128,0.85)",
-  "early-warning": "rgba(251,191,36,0.85)",
+const TYPE_COLORS: Record<SocmintReportType, string> = {
+  "local-report": "rgba(96,165,250,0.85)",
+  "social-claim": "rgba(251,191,36,0.85)",
+  "osint-account": "rgba(74,222,128,0.85)",
+  "local-media": "rgba(196,181,253,0.9)",
 };
 
-const TYPE_LABELS: Record<SignalType, string> = {
-  source: "Source",
-  electronic: "Electronic",
-  "early-warning": "Early Warning",
-};
-
-const SIGNAL_TYPES: SignalType[] = ["source", "electronic", "early-warning"];
+const SOCMINT_TYPES: SocmintReportType[] = [
+  "local-report",
+  "social-claim",
+  "osint-account",
+  "local-media",
+];
 
 function itemStyle(active: boolean) {
   return {
@@ -70,16 +74,16 @@ export function SignalsFloatingCard({
   const [collapsed, setCollapsed] = useState(false);
   const [regionOpen, setRegionOpen] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
-  const filtered = mockSignals
-    .filter((s) => s.confidence >= confidenceMin)
-    .filter((s) => activeRegion === "global" || s.region === activeRegion);
+  const filtered = socmintReports
+    .filter((report) => socmintMatchesConfidenceFilter(report, confidenceMin))
+    .filter((report) => activeRegion === "global" || report.region === activeRegion);
   const isGlobal = activeRegion === "global";
   const regionLabel = isGlobal
     ? "All Regions"
     : REGION_OPTIONS.find((r) => r.key === activeRegion)?.label ?? "Middle East";
   const regionSubtitle = isGlobal
-    ? "Global signal monitoring active"
-    : "Regional signal monitoring active";
+    ? "Global public social source coverage"
+    : "Regional public social source coverage";
 
   useEffect(() => {
     if (!regionOpen) return;
@@ -108,12 +112,9 @@ export function SignalsFloatingCard({
       >
         <Radio size={10} style={{ color: "rgba(96,165,250,0.78)" }} />
         <span style={{ fontSize: "10px", fontWeight: 700, color: "rgba(185,195,210,0.9)", letterSpacing: "0.1em" }}>
-          SIGINT
+          SOCMINT
         </span>
-        <ChevronRight
-          size={12}
-          style={{ color: "rgba(100,100,100,0.78)" }}
-        />
+        <ChevronRight size={12} style={{ color: "rgba(100,100,100,0.78)" }} />
       </button>
     );
   }
@@ -127,32 +128,36 @@ export function SignalsFloatingCard({
         background: "rgba(12,12,12,0.88)",
         border: "1px solid rgba(255,255,255,0.07)",
         backdropFilter: "blur(14px)",
-        width: "198px",
-        minWidth: "198px",
+        width: "214px",
+        minWidth: "214px",
         boxShadow:
           "0 8px 32px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.04) inset",
       }}
     >
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-1.5">
-          <Radio size={9} style={{ color: "rgba(96,165,250,0.7)" }} />
-          <span className="tracking-widest uppercase font-semibold" style={LABEL_STYLE}>
-            SIGINT Monitor
+        <div className="flex flex-col gap-0.5">
+          <div className="flex items-center gap-1.5">
+            <Radio size={9} style={{ color: "rgba(96,165,250,0.7)" }} />
+            <span className="tracking-widest uppercase font-semibold" style={LABEL_STYLE}>
+              SOCMINT Watch
+            </span>
+          </div>
+          <span style={{ fontSize: "10.5px", color: "rgba(100,100,100,0.85)" }}>
+            Public social source monitoring
           </span>
         </div>
         <button
           onClick={() => setCollapsed(true)}
-          aria-label="Collapse signals card"
+          aria-label="Collapse SOCMINT card"
           style={{ color: "rgba(100,100,100,0.8)" }}
         >
           <ChevronRight size={13} style={{ transform: "rotate(180deg)" }} />
         </button>
       </div>
 
-      {/* Signal coverage */}
       <div className="mb-3" style={{ position: "relative" }}>
         <span className="tracking-widest uppercase block mb-1" style={LABEL_STYLE}>
-          Signal Coverage
+          Coverage
         </span>
         <button
           className="flex items-center justify-between w-full"
@@ -234,7 +239,6 @@ export function SignalsFloatingCard({
         )}
       </div>
 
-      {/* Confidence threshold */}
       <div
         className="mb-3"
         style={{
@@ -273,25 +277,24 @@ export function SignalsFloatingCard({
         </div>
       </div>
 
-      {/* Signal type breakdown */}
       <div
         style={{
           borderTop: "1px solid rgba(255,255,255,0.05)",
           paddingTop: "11px",
-          maxHeight: "152px",
+          maxHeight: "168px",
           overflowY: "auto",
         }}
       >
         <span className="tracking-widest uppercase block mb-2" style={LABEL_STYLE}>
-          Active Signals
+          Active Reports
         </span>
         <div className="flex flex-col gap-1.5">
-          {SIGNAL_TYPES.map((type) => {
-            const count = filtered.filter((s) => s.type === type).length;
+          {SOCMINT_TYPES.map((type) => {
+            const count = filtered.filter((report) => report.type === type).length;
             return (
               <div key={type} className="flex items-center justify-between">
                 <span style={{ fontSize: "10.5px", color: "rgba(140,140,140,0.85)" }}>
-                  {TYPE_LABELS[type]}
+                  {SOCMINT_TYPE_LABELS[type]}
                 </span>
                 <span
                   style={{
@@ -314,7 +317,7 @@ export function SignalsFloatingCard({
             className="flex items-center justify-between"
           >
             <span style={{ fontSize: "10.5px", color: "rgba(100,100,100,0.8)" }}>
-              Total
+              Total Reports
             </span>
             <span
               style={{
@@ -328,7 +331,6 @@ export function SignalsFloatingCard({
           </div>
         </div>
       </div>
-
     </div>
   );
 }

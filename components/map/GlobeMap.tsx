@@ -4,7 +4,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "re
 import maplibregl from "maplibre-gl";
 import type { StyleSpecification } from "maplibre-gl";
 import { OsintEvent } from "@/types/event";
-import type { OsintSignal } from "@/types/signal";
+import type { SocmintReport } from "@/types/socmint";
 
 const STYLE_URL = "https://demotiles.maplibre.org/style.json";
 const MAP_CENTER: [number, number] = [44, 27];
@@ -94,7 +94,12 @@ const DEFAULT_MARKER_PALETTE: MarkerPalette = {
   glow: "rgba(46, 235, 143, 0.22)",
 };
 
-const SIGNAL_ICON_TYPES: OsintSignal["type"][] = ["source", "electronic", "early-warning"];
+const SIGNAL_ICON_TYPES: SocmintReport["type"][] = [
+  "local-report",
+  "social-claim",
+  "osint-account",
+  "local-media",
+];
 
 const CATEGORY_MARKER_PALETTES: Partial<Record<OsintEvent["category"], MarkerPalette>> = {
   conflict: {
@@ -135,15 +140,17 @@ interface Props {
   events: OsintEvent[];
   selectedId: string | null;
   onSelectEvent?: (id: string) => void;
-  signals?: OsintSignal[];
+  signals?: SocmintReport[];
   selectedSignalId?: string | null;
   onSelectSignal?: (id: string) => void;
+  rightPadding?: number;
 }
 
 export interface GlobeMapHandle {
   centerView: () => void;
   zoomIn: () => void;
   zoomOut: () => void;
+  resetView: () => void;
 }
 
 function setPaint(map: maplibregl.Map, layerId: string, property: string, value: unknown) {
@@ -336,7 +343,7 @@ function eventsCollection(
   };
 }
 
-function signalsCollection(signals: OsintSignal[], selectedSignalId: string | null): GeoJSON.FeatureCollection<GeoJSON.Point> {
+function signalsCollection(signals: SocmintReport[], selectedSignalId: string | null): GeoJSON.FeatureCollection<GeoJSON.Point> {
   return {
     type: "FeatureCollection",
     features: signals.map((signal) => {
@@ -345,13 +352,13 @@ function signalsCollection(signals: OsintSignal[], selectedSignalId: string | nu
         properties: {
           id: signal.id,
           type: signal.type,
-          confidence: signal.confidence,
+          confidence: signal.confidenceScore ?? 0,
           icon: `${SIGNAL_ICON_PREFIX}-${signal.type}`,
           selected: signal.id === selectedSignalId,
         },
         geometry: {
           type: "Point",
-          coordinates: [signal.coordinates.lng, signal.coordinates.lat],
+          coordinates: signal.coordinates,
         },
       };
     }),
@@ -422,10 +429,10 @@ function addPoliticsEventIcons(map: maplibregl.Map) {
   });
 }
 
-function isSignalOnFrontHemisphere(centerLng: number, centerLat: number, signal: OsintSignal) {
+function isSignalOnFrontHemisphere(centerLng: number, centerLat: number, signal: SocmintReport) {
   const centerLatRad = centerLat * DEG_TO_RAD;
-  const signalLatRad = signal.coordinates.lat * DEG_TO_RAD;
-  const lngDeltaRad = (signal.coordinates.lng - centerLng) * DEG_TO_RAD;
+  const signalLatRad = signal.coordinates[1] * DEG_TO_RAD;
+  const lngDeltaRad = (signal.coordinates[0] - centerLng) * DEG_TO_RAD;
 
   const dot =
     Math.sin(centerLatRad) * Math.sin(signalLatRad) +
@@ -434,7 +441,7 @@ function isSignalOnFrontHemisphere(centerLng: number, centerLat: number, signal:
   return dot > SIGNAL_FRONT_HEMISPHERE_DOT_MIN;
 }
 
-function visibleSignalsForGlobe(map: maplibregl.Map, signals: OsintSignal[]) {
+function visibleSignalsForGlobe(map: maplibregl.Map, signals: SocmintReport[]) {
   const center = map.getCenter();
   return signals.filter((signal) => isSignalOnFrontHemisphere(center.lng, center.lat, signal));
 }
@@ -537,9 +544,16 @@ function addSignalLayers(map: maplibregl.Map) {
   }
 }
 
-function updateSignalSource(map: maplibregl.Map, signals: OsintSignal[], selectedSignalId: string | null) {
+function updateSignalSource(map: maplibregl.Map, signals: SocmintReport[], selectedSignalId: string | null) {
   const source = map.getSource(SIGNAL_SOURCE_ID) as maplibregl.GeoJSONSource | undefined;
-  source?.setData(signalsCollection(visibleSignalsForGlobe(map, signals), selectedSignalId));
+  if (!source) return;
+
+  const visibleSignals = visibleSignalsForGlobe(map, signals);
+  const visibleSelectedId = visibleSignals.some((signal) => signal.id === selectedSignalId)
+    ? selectedSignalId
+    : null;
+
+  source.setData(signalsCollection(visibleSignals, visibleSelectedId));
 }
 
 function addDetailLabelLayers(map: maplibregl.Map) {
@@ -788,6 +802,7 @@ export const GlobeMap = forwardRef<GlobeMapHandle, Props>(function GlobeMap({
   signals = [],
   selectedSignalId = null,
   onSelectSignal,
+  rightPadding = 0,
 }: Props, ref) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -796,10 +811,15 @@ export const GlobeMap = forwardRef<GlobeMapHandle, Props>(function GlobeMap({
   const signalsRef = useRef(signals);
   const selectedSignalIdRef = useRef(selectedSignalId);
   const [styleReady, setStyleReady] = useState(false);
+  const skipNextPaddingAnimRef = useRef(false);
+  const prevStyleReadyRef = useRef(false);
 
   useImperativeHandle(ref, () => ({
     centerView: () => {
-      mapRef.current?.easeTo({
+      const map = mapRef.current;
+      if (!map) return;
+      map.stop();
+      map.easeTo({
         center: MAP_CENTER,
         zoom: INITIAL_ZOOM,
         bearing: 0,
@@ -810,14 +830,46 @@ export const GlobeMap = forwardRef<GlobeMapHandle, Props>(function GlobeMap({
     zoomIn: () => {
       const map = mapRef.current;
       if (!map) return;
+      map.stop();
       map.easeTo({ zoom: map.getZoom() + CONTROL_ZOOM_DELTA, duration: 250 });
     },
     zoomOut: () => {
       const map = mapRef.current;
       if (!map) return;
+      map.stop();
       map.easeTo({ zoom: map.getZoom() - CONTROL_ZOOM_DELTA, duration: 250 });
     },
+    resetView: () => {
+      const map = mapRef.current;
+      if (!map) return;
+      skipNextPaddingAnimRef.current = true;
+      map.stop();
+      map.easeTo({
+        center: MAP_CENTER,
+        zoom: INITIAL_ZOOM,
+        bearing: 0,
+        pitch: 0,
+        padding: { top: 0, right: 0, bottom: 0, left: 0 },
+        duration: 550,
+      });
+    },
   }), []);
+
+  useEffect(() => {
+    if (skipNextPaddingAnimRef.current) {
+      skipNextPaddingAnimRef.current = false;
+      return;
+    }
+    const map = mapRef.current;
+    if (!map || !styleReady) return;
+    const isFirstLoad = !prevStyleReadyRef.current;
+    prevStyleReadyRef.current = true;
+    map.stop();
+    map.easeTo({
+      padding: { top: 0, right: rightPadding, bottom: 0, left: 0 },
+      duration: isFirstLoad ? 0 : 220,
+    });
+  }, [rightPadding, styleReady]);
 
   useEffect(() => {
     onSelectEventRef.current = onSelectEvent;
@@ -834,7 +886,7 @@ export const GlobeMap = forwardRef<GlobeMapHandle, Props>(function GlobeMap({
 
   useEffect(() => {
     if (!containerRef.current) return;
-    let rafId: number | undefined;
+    const rafIds: number[] = [];
     let map: maplibregl.Map | null = null;
     let cancelled = false;
 
@@ -867,9 +919,16 @@ export const GlobeMap = forwardRef<GlobeMapHandle, Props>(function GlobeMap({
         addEventLayers(map!);
         addSignalLayers(map!);
         map!.resize();
-        // "render" fires from MapLibre's own GL draw loop — first dark frame is on canvas
-        map!.once("render", () => {
-          rafId = requestAnimationFrame(() => setStyleReady(true));
+        map!.once("idle", () => {
+          const resizeFrame = requestAnimationFrame(() => {
+            if (cancelled || !map) return;
+            map.resize();
+            const readyFrame = requestAnimationFrame(() => {
+              if (!cancelled) setStyleReady(true);
+            });
+            rafIds.push(readyFrame);
+          });
+          rafIds.push(resizeFrame);
         });
       });
 
@@ -912,7 +971,7 @@ export const GlobeMap = forwardRef<GlobeMapHandle, Props>(function GlobeMap({
 
     return () => {
       cancelled = true;
-      if (rafId !== undefined) cancelAnimationFrame(rafId);
+      rafIds.forEach((id) => cancelAnimationFrame(id));
       if (map) {
         map.remove();
         mapRef.current = null;
@@ -937,12 +996,6 @@ export const GlobeMap = forwardRef<GlobeMapHandle, Props>(function GlobeMap({
   return (
     <div className="absolute inset-0 bg-[#080808]">
       <div ref={containerRef} className="absolute inset-0 h-full w-full" />
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background: "radial-gradient(circle at 50% 45%, rgba(59,130,246,0.04) 0%, rgba(8,8,8,0) 42%, rgba(4,4,4,0.56) 100%)",
-        }}
-      />
       {/* Dark mask above the canvas — fades out only after idle + rAF confirms dark frame is painted */}
       <div
         className="pointer-events-none absolute inset-0"

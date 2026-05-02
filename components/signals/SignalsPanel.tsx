@@ -1,28 +1,40 @@
 "use client";
 import { useState } from "react";
 import { Radio } from "lucide-react";
-import type { OsintSignal, SignalType } from "@/types/signal";
-import { SIGNAL_TYPE_OPTIONS } from "@/types/signal";
+import type { SocmintReport, SocmintReportType, SocmintStatus } from "@/types/socmint";
+import {
+  SOCMINT_PLATFORM_LABELS,
+  SOCMINT_STATUS_LABELS,
+  SOCMINT_TYPE_BADGE_LABELS,
+  SOCMINT_TYPE_OPTIONS,
+  socmintConfidenceScore,
+  socmintMatchesConfidenceFilter,
+} from "@/types/socmint";
 
-const TYPE_COLORS: Record<SignalType, { badge: string; text: string }> = {
-  source: {
+const TYPE_COLORS: Record<SocmintReportType, { badge: string; text: string }> = {
+  "local-report": {
     badge: "rgba(96,165,250,0.12)",
     text: "rgba(96,165,250,0.9)",
   },
-  electronic: {
-    badge: "rgba(74,222,128,0.1)",
-    text: "rgba(74,222,128,0.9)",
-  },
-  "early-warning": {
+  "social-claim": {
     badge: "rgba(251,191,36,0.1)",
     text: "rgba(251,191,36,0.9)",
   },
+  "osint-account": {
+    badge: "rgba(74,222,128,0.1)",
+    text: "rgba(74,222,128,0.9)",
+  },
+  "local-media": {
+    badge: "rgba(168,85,247,0.11)",
+    text: "rgba(196,181,253,0.9)",
+  },
 };
 
-const TYPE_LABELS: Record<SignalType, string> = {
-  source: "SOURCE",
-  electronic: "ELECTRONIC",
-  "early-warning": "EARLY WARNING",
+const STATUS_COLORS: Record<SocmintStatus, string> = {
+  unverified: "rgba(248,113,113,0.9)",
+  reported: "rgba(251,191,36,0.9)",
+  corroborated: "rgba(74,222,128,0.9)",
+  "needs-review": "rgba(147,197,253,0.9)",
 };
 
 function confidenceColor(score: number): string {
@@ -37,16 +49,16 @@ export function SignalsPanel({
   selectedId,
   onSelect,
 }: {
-  signals: OsintSignal[];
+  signals: SocmintReport[];
   confidenceMin: number;
   selectedId: string | null;
   onSelect: (id: string) => void;
 }) {
-  const [activeType, setActiveType] = useState<SignalType | "all">("all");
+  const [activeType, setActiveType] = useState<SocmintReportType | "all">("all");
 
   const displayed = signals
-    .filter((s) => s.confidence >= confidenceMin)
-    .filter((s) => activeType === "all" || s.type === activeType);
+    .filter((report) => socmintMatchesConfidenceFilter(report, confidenceMin))
+    .filter((report) => activeType === "all" || report.type === activeType);
 
   return (
     <div
@@ -57,7 +69,6 @@ export function SignalsPanel({
         borderLeft: "1px solid rgba(255,255,255,0.05)",
       }}
     >
-      {/* Header */}
       <div
         className="flex items-center justify-between px-4 py-2.5 flex-shrink-0"
         style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
@@ -68,21 +79,19 @@ export function SignalsPanel({
             className="font-semibold tracking-widest uppercase"
             style={{ fontSize: "10px", color: "rgba(170,170,170,0.8)" }}
           >
-            Signal Feed
+            SOCMINT Feed
           </span>
         </div>
         <span style={{ fontSize: "10.5px", color: "rgba(100,100,100,0.85)" }}>
-          {displayed.length} Signals
+          {displayed.length} Reports
         </span>
       </div>
 
-
-      {/* Type filter toggles */}
       <div
         className="flex items-center gap-1 px-3 py-2 flex-shrink-0 flex-wrap"
         style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
       >
-        {SIGNAL_TYPE_OPTIONS.map((opt) => {
+        {SOCMINT_TYPE_OPTIONS.map((opt) => {
           const active = opt.key === activeType;
           return (
             <button
@@ -110,7 +119,6 @@ export function SignalsPanel({
         })}
       </div>
 
-      {/* Signal list */}
       <div
         className="flex-1 overflow-y-auto"
         style={{
@@ -120,25 +128,25 @@ export function SignalsPanel({
           gap: "6px",
         }}
       >
-        {displayed.map((signal) => {
-          const colors = TYPE_COLORS[signal.type];
-          const isSelected = signal.id === selectedId;
+        {displayed.map((report) => {
+          const colors = TYPE_COLORS[report.type];
+          const score = socmintConfidenceScore(report);
+          const isSelected = report.id === selectedId;
           return (
             <div
-              key={signal.id}
-              onClick={() => onSelect(signal.id)}
+              key={report.id}
+              onClick={() => onSelect(report.id)}
               style={{
                 background: isSelected ? "rgba(28,28,28,0.9)" : "rgba(18,18,18,0.7)",
                 border: isSelected
-                  ? "1px solid rgba(74,222,128,0.28)"
+                  ? "1px solid rgba(96,165,250,0.28)"
                   : "1px solid rgba(255,255,255,0.05)",
                 borderRadius: "8px",
                 padding: "10px 12px",
                 cursor: "pointer",
               }}
             >
-              {/* Type badge + confidence */}
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-start justify-between gap-2 mb-2">
                 <span
                   style={{
                     fontSize: "8.5px",
@@ -150,27 +158,24 @@ export function SignalsPanel({
                     color: colors.text,
                   }}
                 >
-                  {TYPE_LABELS[signal.type]}
+                  {SOCMINT_PLATFORM_LABELS[report.platform]} / {SOCMINT_TYPE_BADGE_LABELS[report.type]}
                 </span>
                 <div className="flex items-center gap-1.5">
-                  <span
-                    style={{ fontSize: "9px", color: "rgba(100,100,100,0.7)" }}
-                  >
+                  <span style={{ fontSize: "9px", color: "rgba(100,100,100,0.7)" }}>
                     CONF
                   </span>
                   <span
                     style={{
                       fontSize: "11px",
                       fontWeight: 700,
-                      color: confidenceColor(signal.confidence),
+                      color: confidenceColor(score),
                     }}
                   >
-                    {signal.confidence}%
+                    {score}%
                   </span>
                 </div>
               </div>
 
-              {/* Source label */}
               <div
                 className="mb-1.5"
                 style={{
@@ -179,10 +184,9 @@ export function SignalsPanel({
                   color: "rgba(170,170,170,0.85)",
                 }}
               >
-                {signal.source_label}
+                {report.locationName}
               </div>
 
-              {/* Raw text */}
               <p
                 style={{
                   fontSize: "11px",
@@ -191,25 +195,41 @@ export function SignalsPanel({
                   margin: 0,
                 }}
               >
-                {signal.raw_text}
+                {report.summary}
               </p>
 
-              {/* Timestamp + linked event */}
-              <div className="flex items-center justify-between mt-2">
+              <div className="mt-2 flex items-center justify-between gap-2">
                 <span
-                  style={{ fontSize: "9.5px", color: "rgba(85,85,85,0.9)" }}
+                  style={{
+                    fontSize: "8.5px",
+                    fontWeight: 700,
+                    letterSpacing: "0.06em",
+                    color: STATUS_COLORS[report.status],
+                  }}
                 >
-                  {signal.timestamp}
+                  STATUS: {SOCMINT_STATUS_LABELS[report.status]}
                 </span>
-                {signal.linked_event_id && (
+                <span
+                  className="truncate"
+                  style={{ fontSize: "9px", color: "rgba(122,122,122,0.9)" }}
+                >
+                  {report.sourceName}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between mt-2">
+                <span style={{ fontSize: "9.5px", color: "rgba(125,125,125,0.92)" }}>
+                  {report.timestamp}
+                </span>
+                {report.relatedEventId && (
                   <span
                     style={{
                       fontSize: "8.5px",
-                      color: "rgba(96,165,250,0.6)",
+                      color: "rgba(125,181,255,0.72)",
                       letterSpacing: "0.03em",
                     }}
                   >
-                    → Event #{signal.linked_event_id}
+                    {"->"} Event #{report.relatedEventId}
                   </span>
                 )}
               </div>
@@ -218,13 +238,12 @@ export function SignalsPanel({
         })}
       </div>
 
-      {/* Footer */}
       <div
         className="flex-shrink-0 px-4 py-2.5"
         style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
       >
         <span style={{ fontSize: "11px", color: "rgba(100,100,100,0.6)" }}>
-          Live signal monitoring active
+          Public social source monitoring active
         </span>
       </div>
     </div>

@@ -4,7 +4,6 @@ import {
   Building2,
   ChevronDown,
   Search,
-  SlidersHorizontal,
   Bookmark,
   ArrowRight,
 } from "lucide-react";
@@ -81,6 +80,185 @@ const CRYPTO_ROWS: SignalRowData[] = [
   { label: "SOL", value: "148.6", change: "+2.06%", up: true },
   { label: "XRP", value: "0.532", change: "-0.41%", up: false },
 ];
+
+const REGIONAL_FOCUS_ITEMS = [
+  "All Regions",
+  "Turkey",
+  "Europe",
+  "Balkans",
+  "Middle East",
+  "North Africa",
+  "Caucasus",
+  "Asia-Pacific",
+  "Americas",
+];
+
+const POLITICAL_MONITOR_ITEMS = [
+  "All Politics",
+  "Turkey Politics",
+  "Turkey Foreign Policy",
+  "Diplomacy",
+  "Elections",
+  "Government / Cabinet",
+  "Parliament",
+  "Protests",
+  "Sanctions",
+  "Regional Summits",
+];
+
+function eventSearchText(event: OsintEvent): string {
+  return [
+    event.title,
+    event.summary,
+    event.location,
+    event.sourceType,
+    event.verification,
+    ...(event.tags ?? []),
+  ]
+    .join(" ")
+    .toLowerCase();
+}
+
+function includesAny(text: string, needles: string[]) {
+  return needles.some((needle) => text.includes(needle));
+}
+
+function isTurkeyRelated(event: OsintEvent, text = eventSearchText(event)) {
+  return (
+    event.markerVariant === "turkey-focus" ||
+    includesAny(text, ["turkey", "türkiye", "ankara", "istanbul"])
+  );
+}
+
+function matchesRegionalFocus(event: OsintEvent, focus: string) {
+  if (focus === "All Regions") return true;
+
+  const text = eventSearchText(event);
+  switch (focus) {
+    case "Turkey":
+      return isTurkeyRelated(event, text);
+    case "Europe":
+      return event.region === "europe";
+    case "Middle East":
+      return event.region === "middle-east";
+    case "Asia-Pacific":
+      return event.region === "asia-pacific";
+    case "Americas":
+      return event.region === "americas";
+    case "Balkans":
+      return includesAny(text, [
+        "balkans",
+        "serbia",
+        "belgrade",
+        "bosnia",
+        "sarajevo",
+        "kosovo",
+        "pristina",
+        "north macedonia",
+        "skopje",
+        "albania",
+        "tirana",
+        "croatia",
+        "zagreb",
+        "bulgaria",
+        "sofia",
+        "greece",
+        "athens",
+      ]);
+    case "North Africa":
+      return includesAny(text, [
+        "north africa",
+        "morocco",
+        "rabat",
+        "algeria",
+        "algiers",
+        "tunisia",
+        "tunis",
+        "libya",
+        "tripoli",
+        "egypt",
+        "cairo",
+        "mauritania",
+        "nouakchott",
+      ]);
+    case "Caucasus":
+      return includesAny(text, [
+        "caucasus",
+        "georgia",
+        "tbilisi",
+        "armenia",
+        "yerevan",
+        "azerbaijan",
+        "baku",
+      ]);
+    default:
+      return true;
+  }
+}
+
+function matchesPoliticalMonitor(event: OsintEvent, monitor: string) {
+  if (monitor === "All Politics") return true;
+
+  const text = eventSearchText(event);
+  switch (monitor) {
+    case "Turkey Politics":
+      return isTurkeyRelated(event, text);
+    case "Turkey Foreign Policy":
+      return (
+        isTurkeyRelated(event, text) &&
+        includesAny(text, [
+          "foreign policy",
+          "diplomatic",
+          "diplomacy",
+          "border",
+          "sanctions",
+          "summit",
+          "mediterranean",
+          "consultation",
+        ])
+      );
+    case "Diplomacy":
+      return includesAny(text, [
+        "diplomacy",
+        "diplomatic",
+        "foreign policy",
+        "foreign ministry",
+        "consultation",
+        "dialogue",
+        "mediation",
+        "coordination",
+      ]);
+    case "Elections":
+      return includesAny(text, ["election", "electoral", "vote", "ballot"]);
+    case "Government / Cabinet":
+      return includesAny(text, [
+        "government",
+        "cabinet",
+        "ministry",
+        "foreign ministry",
+        "reshuffle",
+        "coalition",
+        "confidence",
+      ]);
+    case "Parliament":
+      return includesAny(text, [
+        "parliament",
+        "parliamentary",
+        "legislative",
+        "committee",
+        "caucus",
+        "procedural",
+      ]);
+    case "Protests":
+      return includesAny(text, ["protest", "rally", "unrest", "opposition"]);
+    case "Sanctions":
+      return includesAny(text, ["sanction", "sanctions"]);
+    case "Regional Summits":
+      return includesAny(text, ["summit", "regional summit", "preparatory"]);
+    default:
+      return true;
+  }
+}
 
 /* ─── Side panel sub-components ────────────────────────────────── */
 function SignalRow({ label, value, change, up, detail }: SignalRowData) {
@@ -167,6 +345,94 @@ function CompactMarketPanel({
       {rows.map((row) => (
         <SignalRow key={row.label} {...row} />
       ))}
+    </div>
+  );
+}
+
+function PoliticsSidePanel({
+  title,
+  items,
+  selected,
+  onSelect,
+  fill = false,
+}: {
+  title: string;
+  items: string[];
+  selected: string;
+  onSelect: (item: string) => void;
+  fill?: boolean;
+}) {
+  return (
+    <div
+      className="flex flex-col"
+      style={{
+        width: "100%",
+        flex: fill ? 1 : "0 0 auto",
+        minHeight: fill ? 0 : undefined,
+        background: "rgba(12,12,12,0.97)",
+        border: "1px solid rgba(255,255,255,0.07)",
+        borderRadius: "10px",
+        padding: "10px 12px",
+      }}
+    >
+      <p
+        style={{
+          fontSize: "10px",
+          fontWeight: 700,
+          color: "rgba(175,185,200,0.88)",
+          marginBottom: "7px",
+          letterSpacing: "0.04em",
+        }}
+      >
+        {title}
+      </p>
+      <div
+        className="flex flex-col gap-0.5 overflow-y-auto pr-0.5"
+        style={{
+          flex: fill ? 1 : "0 0 auto",
+          minHeight: fill ? 0 : undefined,
+        }}
+      >
+        {items.map((item) => {
+          const active = item === selected;
+          return (
+            <button
+              key={item}
+              type="button"
+              onClick={() => onSelect(item)}
+              className="flex items-center justify-between rounded-md px-2 py-1 transition-colors duration-150"
+              style={{
+                background: active ? "rgba(59,130,246,0.09)" : "transparent",
+                border: active
+                  ? "1px solid rgba(59,130,246,0.18)"
+                  : "1px solid transparent",
+                color: active ? "rgba(180,210,250,0.94)" : "rgba(120,120,120,0.9)",
+                fontSize: "10.5px",
+                fontWeight: active ? 600 : 500,
+                textAlign: "left",
+                minHeight: "24px",
+              }}
+              onMouseEnter={(e) => {
+                if (!active) {
+                  (e.currentTarget as HTMLElement).style.background =
+                    "rgba(255,255,255,0.035)";
+                  (e.currentTarget as HTMLElement).style.color =
+                    "rgba(170,170,170,0.9)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!active) {
+                  (e.currentTarget as HTMLElement).style.background = "transparent";
+                  (e.currentTarget as HTMLElement).style.color =
+                    "rgba(120,120,120,0.9)";
+                }
+              }}
+            >
+              {item}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -262,8 +528,16 @@ export function PoliticsPanel({ events }: { events: OsintEvent[] }) {
   const [severityFilter, setSeverityFilter] = useState<SeverityFilter>("all");
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedRegionFocus, setSelectedRegionFocus] = useState("All Regions");
+  const [selectedPoliticalMonitor, setSelectedPoliticalMonitor] = useState("All Politics");
+  const [selectedSourceId, setSelectedSourceId] = useState("all");
+
+  const sourceOptions = Array.from(new Set(events.map((event) => event.sourceId)));
 
   const filtered = events.filter((e) => {
+    if (!matchesRegionalFocus(e, selectedRegionFocus)) return false;
+    if (!matchesPoliticalMonitor(e, selectedPoliticalMonitor)) return false;
+    if (selectedSourceId !== "all" && e.sourceId !== selectedSourceId) return false;
     if (severityFilter !== "all" && e.severity !== severityFilter) return false;
     if (
       search.trim() &&
@@ -280,7 +554,26 @@ export function PoliticsPanel({ events }: { events: OsintEvent[] }) {
       style={{ background: "rgba(10,10,10,0.97)" }}
     >
       {/* Left panel area */}
-      <div className="flex-1" />
+      <div
+        className="flex flex-1 flex-col py-4 pl-4 pr-3"
+        style={{ minWidth: 0 }}
+      >
+        <div className="ml-auto flex h-full w-full max-w-[268px] flex-col gap-3">
+          <PoliticsSidePanel
+            title="Regional Focus"
+            items={REGIONAL_FOCUS_ITEMS}
+            selected={selectedRegionFocus}
+            onSelect={setSelectedRegionFocus}
+          />
+          <PoliticsSidePanel
+            title="Political Monitors"
+            items={POLITICAL_MONITOR_ITEMS}
+            selected={selectedPoliticalMonitor}
+            onSelect={setSelectedPoliticalMonitor}
+            fill
+          />
+        </div>
+      </div>
 
       {/* ── Center column ───────────────────────────── */}
       <div
@@ -307,21 +600,30 @@ export function PoliticsPanel({ events }: { events: OsintEvent[] }) {
                 Politics Monitor
               </span>
             </div>
-            <div className="flex items-center gap-1">
-              <button
-                className="flex items-center gap-1 rounded px-2 py-1"
-                style={{ fontSize: "10.5px", color: "rgba(120,120,120,0.9)", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}
+            <div className="relative">
+              <select
+                value={selectedSourceId}
+                onChange={(event) => setSelectedSourceId(event.target.value)}
+                className="appearance-none rounded py-1 pl-2 pr-6 outline-none"
+                style={{
+                  fontSize: "10.5px",
+                  color: "rgba(120,120,120,0.9)",
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.07)",
+                }}
               >
-                All Sources <ChevronDown size={10} />
-              </button>
-              <button
-                className="flex items-center justify-center rounded w-6 h-6"
-                style={{ color: "rgba(80,80,80,0.85)", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}
-                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "rgba(160,160,160,0.9)")}
-                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "rgba(80,80,80,0.85)")}
-              >
-                <SlidersHorizontal size={11} />
-              </button>
+                <option value="all">All Sources</option>
+                {sourceOptions.map((sourceId) => (
+                  <option key={sourceId} value={sourceId}>
+                    {getSourceName(sourceId)}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown
+                size={10}
+                className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2"
+                style={{ color: "rgba(120,120,120,0.8)" }}
+              />
             </div>
           </div>
 
@@ -378,10 +680,16 @@ export function PoliticsPanel({ events }: { events: OsintEvent[] }) {
         >
 
         {/* Card list */}
-        <div className="flex-1 min-h-0 overflow-y-auto" style={{ padding: "8px 10px" }}>
+        <div className="politics-feed-scrollbar flex-1 min-h-0 overflow-y-auto" style={{ padding: "8px 10px" }}>
           {filtered.length === 0 ? (
-            <div className="flex items-center justify-center h-full" style={{ fontSize: "11px", color: "rgba(60,60,60,0.85)" }}>
-              No events match filters.
+            <div
+              className="flex h-full flex-col items-center justify-center gap-1 text-center"
+              style={{ fontSize: "11px", color: "rgba(70,70,70,0.9)" }}
+            >
+              <span style={{ color: "rgba(120,120,120,0.9)", fontWeight: 600 }}>
+                No matching political events
+              </span>
+              <span>Try changing the monitor or regional focus.</span>
             </div>
           ) : (
             filtered.map((event) => (
@@ -423,6 +731,50 @@ export function PoliticsPanel({ events }: { events: OsintEvent[] }) {
         <CompactMarketPanel title="Global Economics" rows={GLOBAL_ECON_ROWS} />
         <CompactMarketPanel title="TR-BIST Economics" rows={TR_BIST_ROWS} />
         <CompactMarketPanel title="Crypto Assets" rows={CRYPTO_ROWS} />
+        <div
+          style={{
+            background: "rgba(12,12,12,0.97)",
+            border: "1px solid rgba(255,255,255,0.07)",
+            borderRadius: "10px",
+            padding: "8px 14px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <span
+            style={{
+              fontSize: "9.5px",
+              fontWeight: 700,
+              letterSpacing: "0.08em",
+              color: "rgba(80,80,80,0.9)",
+              textTransform: "uppercase",
+            }}
+          >
+            Last Updated
+          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <span
+              style={{
+                width: "5px",
+                height: "5px",
+                borderRadius: "50%",
+                background: "rgba(74,222,128,0.75)",
+                flexShrink: 0,
+              }}
+            />
+            <span
+              style={{
+                fontSize: "11px",
+                fontWeight: 600,
+                color: "rgba(195,205,220,0.9)",
+                fontVariantNumeric: "tabular-nums",
+              }}
+            >
+              19:51 UTC
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   );

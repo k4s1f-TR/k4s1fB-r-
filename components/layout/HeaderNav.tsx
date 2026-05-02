@@ -73,7 +73,10 @@ export function HeaderNav({
       <div className="flex flex-col justify-center mr-10" style={{ minWidth: "190px" }}>
         <span
           className="leading-tight font-bold tracking-tight"
-          style={{ fontSize: "15px", color: "rgba(220,220,220,0.95)" }}
+          style={{
+            fontSize: "15px",
+            color: "rgba(220,220,220,0.95)",
+          }}
         >
           BörüEyes
         </span>

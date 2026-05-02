@@ -13,8 +13,9 @@ import { SignalsFloatingCard } from "@/components/signals/SignalsFloatingCard";
 import { SourcesScreen } from "@/components/sources/SourcesScreen";
 import { PoliticsPanel } from "@/components/politics/PoliticsPanel";
 import { mockEvents } from "@/data/mockEvents";
-import { mockSignals } from "@/data/mockSignals";
+import { socmintReports } from "@/data/socmintReports";
 import type { EventCategory, RegionKey } from "@/types/event";
+import { socmintMatchesConfidenceFilter } from "@/types/socmint";
 
 export type ViewMode = "situation" | "global" | "signals";
 type ActiveSection = "dashboard" | "sources";
@@ -38,12 +39,18 @@ export function AppShell() {
   const displayedSignals = useMemo(
     () =>
       activeRailMode === "signals"
-        ? mockSignals
-            .filter((s) => s.confidence >= signalConfidenceMin)
+        ? socmintReports
+            .filter((report) => socmintMatchesConfidenceFilter(report, signalConfidenceMin))
             .filter((s) => activeSignalRegion === "global" || s.region === activeSignalRegion)
         : [],
     [activeRailMode, activeSignalRegion, signalConfidenceMin],
   );
+
+  const isMapScreen = activeSection === "dashboard" && activeTopTab === "situation";
+  const activeMapRailMode = isMapScreen ? activeRailMode : null;
+  const mapControlPanelOffset =
+    activeMapRailMode === "global" ? 390 : activeMapRailMode === "signals" ? 368 : 0;
+  const mapFramingRightPadding = activeMapRailMode !== null ? 300 : 0;
 
   const baseEvents = useMemo(
     () =>
@@ -89,6 +96,7 @@ export function AppShell() {
     setActiveCategory("all");
     setSelectedId(null);
     setSelectedSignalId(null);
+    globeMapRef.current?.resetView();
   }
 
   function handleRegionChange(region: RegionKey) {
@@ -153,70 +161,128 @@ export function AppShell() {
           onHome={handleHomeReset}
         />
 
-        {activeSection === "sources" ? (
-          <SourcesScreen />
-        ) : activeTopTab === "politics" ? (
-          <PoliticsPanel events={displayedEvents} />
-        ) : (
-          <>
-            <div className="relative flex-1 overflow-hidden">
-              <GlobeMap
-                ref={globeMapRef}
-                events={activeRailMode === "global" ? displayedEvents : []}
-                selectedId={selectedId}
-                onSelectEvent={setSelectedId}
-                signals={displayedSignals}
-                selectedSignalId={selectedSignalId}
-                onSelectSignal={setSelectedSignalId}
+        <div className="relative flex-1 overflow-hidden">
+          <div
+            className="absolute inset-0"
+            style={{
+              opacity: isMapScreen ? 1 : 0,
+              pointerEvents: isMapScreen ? "auto" : "none",
+              transition: "opacity 120ms ease",
+            }}
+          >
+            <GlobeMap
+              ref={globeMapRef}
+              events={activeMapRailMode === "global" ? displayedEvents : []}
+              selectedId={selectedId}
+              onSelectEvent={setSelectedId}
+              signals={isMapScreen ? displayedSignals : []}
+              selectedSignalId={selectedSignalId}
+              onSelectSignal={setSelectedSignalId}
+              rightPadding={mapFramingRightPadding}
+            />
+            <div
+              style={{
+                opacity: activeMapRailMode === "signals" ? 1 : 0,
+                pointerEvents: activeMapRailMode === "signals" ? "auto" : "none",
+                transition: "opacity 120ms ease",
+              }}
+            >
+              <SignalsFloatingCard
+                activeRegion={activeSignalRegion}
+                confidenceMin={signalConfidenceMin}
+                onRegionChange={(region) => {
+                  setActiveSignalRegion(region);
+                  setSelectedSignalId(null);
+                }}
+                onConfidenceChange={(min) => {
+                  setSignalConfidenceMin(min);
+                  setSelectedSignalId(null);
+                }}
               />
-              {activeRailMode === "signals" && (
-                <SignalsFloatingCard
-                  activeRegion={activeSignalRegion}
-                  confidenceMin={signalConfidenceMin}
-                  onRegionChange={(region) => {
-                    setActiveSignalRegion(region);
-                    setSelectedSignalId(null);
-                  }}
-                  onConfidenceChange={setSignalConfidenceMin}
-                />
-              )}
-              {activeRailMode === "global" && (
-                <FloatingMonitoringCard
-                  view={activeView}
-                  activeRegion={activeRegion}
-                  activeCategory={activeCategory}
-                  isPoliticsWatch={false}
-                  eventCount={displayedEvents.length}
-                  onViewChange={handleViewChange}
-                  onRegionChange={handleRegionChange}
-                  onCategoryChange={handleCategoryChange}
-                />
-              )}
-              <MapControls
-                onCenterView={() => globeMapRef.current?.centerView()}
-                onZoomIn={() => globeMapRef.current?.zoomIn()}
-                onZoomOut={() => globeMapRef.current?.zoomOut()}
-              />
-              {activeRailMode !== null && <LiveStatusPill />}
             </div>
+            <div
+              style={{
+                opacity: activeMapRailMode === "global" ? 1 : 0,
+                pointerEvents: activeMapRailMode === "global" ? "auto" : "none",
+                transition: "opacity 120ms ease",
+              }}
+            >
+              <FloatingMonitoringCard
+                view={activeView}
+                activeRegion={activeRegion}
+                activeCategory={activeCategory}
+                isPoliticsWatch={false}
+                eventCount={displayedEvents.length}
+                onViewChange={handleViewChange}
+                onRegionChange={handleRegionChange}
+                onCategoryChange={handleCategoryChange}
+              />
+            </div>
+            <MapControls
+              onCenterView={() => globeMapRef.current?.centerView()}
+              onZoomIn={() => globeMapRef.current?.zoomIn()}
+              onZoomOut={() => globeMapRef.current?.zoomOut()}
+              panelOffset={mapControlPanelOffset}
+            />
+            {activeMapRailMode !== null && <LiveStatusPill />}
 
-            {activeRailMode === "global" && (
+            <div
+              style={{
+                position: "absolute",
+                top: "16px",
+                right: "14px",
+                bottom: "10px",
+                width: "372px",
+                transform:
+                  activeMapRailMode === "global"
+                    ? "translateX(0)"
+                    : "translateX(calc(100% + 14px))",
+                opacity: activeMapRailMode === "global" ? 1 : 0,
+                transition: "transform 180ms ease, opacity 120ms ease",
+                willChange: "transform",
+                pointerEvents: activeMapRailMode === "global" ? "auto" : "none",
+              }}
+            >
               <RightEventsPanel
                 events={displayedEvents}
                 selectedId={selectedId}
                 onSelect={setSelectedId}
               />
-            )}
-            {activeRailMode === "signals" && (
+            </div>
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                right: 0,
+                bottom: 0,
+                width: "372px",
+                transform: activeMapRailMode === "signals" ? "translateX(0)" : "translateX(100%)",
+                opacity: activeMapRailMode === "signals" ? 1 : 0,
+                transition: "transform 180ms ease, opacity 120ms ease",
+                willChange: "transform",
+                pointerEvents: activeMapRailMode === "signals" ? "auto" : "none",
+              }}
+            >
               <SignalsPanel
                 signals={displayedSignals}
                 confidenceMin={signalConfidenceMin}
                 selectedId={selectedSignalId}
                 onSelect={setSelectedSignalId}
               />
-            )}
-          </>
-        )}
+            </div>
+          </div>
+
+          {activeSection === "sources" && (
+            <div className="ui-fade-in absolute inset-0 z-20 flex flex-col overflow-hidden">
+              <SourcesScreen />
+            </div>
+          )}
+          {activeSection === "dashboard" && activeTopTab === "politics" && (
+            <div className="ui-fade-in absolute inset-0 z-20 flex flex-col overflow-hidden">
+              <PoliticsPanel events={displayedEvents} />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

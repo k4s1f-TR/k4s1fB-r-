@@ -6,7 +6,6 @@ import {
   Ship,
   Bookmark,
   BarChart2,
-  Settings,
   LogOut,
   Eye,
 } from "lucide-react";
@@ -14,17 +13,14 @@ import type { ViewMode } from "./AppShell";
 
 const topIcons: { icon: React.ElementType; label: string; viewKey?: ViewMode }[] = [
   { icon: Globe, label: "Global View", viewKey: "global" },
-  { icon: Radio, label: "Signals", viewKey: "signals" },
+  { icon: Radio, label: "SOCMINT Watch", viewKey: "signals" },
   { icon: Plane, label: "Air Track" },
   { icon: Ship, label: "Ship Track" },
   { icon: Bookmark, label: "Bookmarks" },
   { icon: BarChart2, label: "Analytics" },
 ];
 
-const bottomIcons = [
-  { icon: Settings, label: "Settings" },
-  { icon: LogOut, label: "Exit" },
-];
+const bottomIcons = [{ icon: LogOut, label: "Exit" }];
 
 function RailIcon({
   icon: Icon,

@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity, Clock3, Database, ExternalLink } from "lucide-react";
+import { Clock3, Database, ExternalLink } from "lucide-react";
 import type { ReactNode } from "react";
 import { mockEvents } from "@/data/mockEvents";
 import { mockSources } from "@/data/mockSources";
@@ -107,13 +107,13 @@ function SummaryCard({
 }) {
   return (
     <div
-      className="min-w-0 rounded-lg px-4 py-3"
+      className="min-w-0 rounded-lg px-3 py-2.5"
       style={{
         background: "rgba(14,14,14,0.78)",
         border: "1px solid rgba(255,255,255,0.06)",
       }}
     >
-      <div className="mb-2 flex items-center gap-2">
+      <div className="mb-1.5 flex items-center gap-2">
         <span
           className="h-1.5 w-1.5 rounded-full"
           style={{ background: tone, boxShadow: `0 0 8px ${tone}` }}
@@ -125,7 +125,7 @@ function SummaryCard({
           {label}
         </span>
       </div>
-      <span className="font-semibold" style={{ color: "rgba(230,230,230,0.94)", fontSize: "24px" }}>
+      <span className="font-semibold" style={{ color: "rgba(230,230,230,0.94)", fontSize: "22px" }}>
         {value}
       </span>
     </div>
@@ -144,16 +144,16 @@ export function SourcesScreen() {
 
   return (
     <main
-      className="flex-1 overflow-y-auto"
+      className="flex min-h-0 flex-1 overflow-hidden"
       style={{
         background:
           "radial-gradient(circle at 28% 18%, rgba(59,130,246,0.055), rgba(10,10,10,0) 34%), #080808",
       }}
     >
-      <div className="mx-auto flex w-full max-w-[1380px] flex-col gap-4 px-6 py-5">
-        <section className="flex items-start justify-between gap-4">
+      <div className="mx-auto flex h-full min-h-0 w-full max-w-[1380px] flex-col gap-3 px-6 py-4">
+        <section className="flex flex-shrink-0 items-start justify-between gap-4">
           <div>
-            <div className="mb-2 flex items-center gap-2">
+            <div className="mb-1.5 flex items-center gap-2">
               <Database size={15} style={{ color: "rgba(147,197,253,0.88)" }} />
               <span
                 className="font-semibold uppercase"
@@ -166,21 +166,9 @@ export function SourcesScreen() {
               Sources Overview
             </h1>
           </div>
-          <div
-            className="hidden items-center gap-2 rounded-lg px-3 py-2 md:flex"
-            style={{
-              color: "rgba(110,110,110,0.9)",
-              background: "rgba(12,12,12,0.72)",
-              border: "1px solid rgba(255,255,255,0.055)",
-              fontSize: "11px",
-            }}
-          >
-            <Activity size={13} style={{ color: "rgba(74,222,128,0.78)" }} />
-            Mock data only
-          </div>
         </section>
 
-        <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <section className="grid flex-shrink-0 grid-cols-2 gap-2.5 lg:grid-cols-4">
           <SummaryCard label="Total Sources" value={totalSources} tone="rgba(147,197,253,0.9)" />
           <SummaryCard label="Active Sources" value={activeSources} tone="rgba(74,222,128,0.9)" />
           <SummaryCard label="Future Sources" value={futureSources} tone="rgba(96,165,250,0.9)" />
@@ -188,14 +176,15 @@ export function SourcesScreen() {
         </section>
 
         <section
-          className="overflow-hidden rounded-lg"
+          className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[10px]"
           style={{
-            background: "rgba(10,10,10,0.78)",
-            border: "1px solid rgba(255,255,255,0.06)",
+            background: "rgba(12,12,12,0.96)",
+            border: "1px solid rgba(255,255,255,0.07)",
+            boxShadow: "inset 0 -1px 0 rgba(255,255,255,0.035)",
           }}
         >
           <div
-            className="hidden grid-cols-[1.35fr_0.7fr_0.55fr_0.85fr_0.9fr_0.65fr] gap-3 px-4 py-2.5 lg:grid"
+            className="hidden flex-shrink-0 grid-cols-[1.35fr_0.7fr_0.55fr_0.85fr_0.9fr_0.65fr] gap-3 px-4 py-2.5 lg:grid"
             style={{
               borderBottom: "1px solid rgba(255,255,255,0.055)",
               color: "rgba(92,92,92,0.95)",
@@ -213,11 +202,11 @@ export function SourcesScreen() {
             <span className="text-right">Events</span>
           </div>
 
-          <div>
+          <div className="sources-registry-scrollbar min-h-0 flex-1 overflow-y-auto">
             {mockSources.map((source, index) => (
               <article
                 key={source.id}
-                className="grid grid-cols-1 gap-3 px-4 py-4 transition-colors duration-150 lg:grid-cols-[1.35fr_0.7fr_0.55fr_0.85fr_0.9fr_0.65fr]"
+                className="grid grid-cols-1 gap-3 px-4 py-3 transition-colors duration-150 lg:grid-cols-[1.35fr_0.7fr_0.55fr_0.85fr_0.9fr_0.65fr]"
                 style={{
                   background: "rgba(255,255,255,0.008)",
                   borderTop: index === 0 ? "0" : "1px solid rgba(255,255,255,0.045)",

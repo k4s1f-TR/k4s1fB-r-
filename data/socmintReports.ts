@@ -1,7 +1,8 @@
 import type { SocmintReport } from "@/types/socmint";
 
 // Mock-only SOCMINT reports. Future public-source adapters can map Telegram public
-// channels, Mastodon/RSS/API, Bluesky/ATProto, and local media RSS into this shape.
+// channels, X/Twitter public accounts, Mastodon/RSS/API, Bluesky/ATProto, and
+// local media RSS into this shape.
 export const socmintReports: SocmintReport[] = [
   {
     id: "soc-1",
@@ -41,7 +42,7 @@ export const socmintReports: SocmintReport[] = [
     summary: "An OSINT account notes possible convoy movement near a logistics route based on public imagery.",
     type: "osint-account",
     platform: "osint-account",
-    sourceName: "LevantWatch OSINT",
+    sourceName: "LevantWatch X OSINT account",
     locationName: "Northern Syria",
     region: "middle-east",
     coordinates: [37.1, 36.9],
@@ -152,7 +153,7 @@ export const socmintReports: SocmintReport[] = [
     summary: "A public OSINT account notes route deviations visible in open maritime references.",
     type: "osint-account",
     platform: "osint-account",
-    sourceName: "RedSeaMonitor",
+    sourceName: "RedSeaMonitor X account",
     locationName: "Red Sea",
     region: "middle-east",
     coordinates: [42.3768, 15.5527],
@@ -200,7 +201,7 @@ export const socmintReports: SocmintReport[] = [
     summary: "A public OSINT account flags visible activity near a diplomatic venue from open imagery.",
     type: "osint-account",
     platform: "osint-account",
-    sourceName: "Caucasus OSINT account",
+    sourceName: "Caucasus X OSINT account",
     locationName: "Baku, Azerbaijan",
     region: "europe",
     coordinates: [49.8671, 40.4093],
@@ -280,7 +281,7 @@ export const socmintReports: SocmintReport[] = [
     summary: "A public OSINT account summarizes open reactions to a cross-strait political statement.",
     type: "osint-account",
     platform: "osint-account",
-    sourceName: "Asia-Pacific OSINT",
+    sourceName: "Asia-Pacific X OSINT account",
     locationName: "Taipei, Taiwan",
     region: "asia-pacific",
     coordinates: [121.5654, 25.033],

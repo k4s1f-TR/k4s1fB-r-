@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { LeftRail } from "./LeftRail";
 import { HeaderNav } from "./HeaderNav";
 import { GlobeMap, type GlobeMapHandle } from "@/components/map/GlobeMap";
+import type { MapMode } from "@/components/map/cameraPresets";
 import { FloatingMonitoringCard } from "@/components/map/FloatingMonitoringCard";
 import { MapControls } from "@/components/map/MapControls";
 import { LiveStatusPill } from "@/components/map/LiveStatusPill";
@@ -50,7 +51,12 @@ export function AppShell() {
   const activeMapRailMode = isMapScreen ? activeRailMode : null;
   const mapControlPanelOffset =
     activeMapRailMode === "global" ? 390 : activeMapRailMode === "signals" ? 368 : 0;
-  const mapFramingRightPadding = activeMapRailMode !== null ? 300 : 0;
+  const mapMode: MapMode =
+    activeMapRailMode === "global"
+      ? "global"
+      : activeMapRailMode === "signals"
+        ? "socmint"
+        : "monitor-home";
 
   const baseEvents = useMemo(
     () =>
@@ -96,7 +102,6 @@ export function AppShell() {
     setActiveCategory("all");
     setSelectedId(null);
     setSelectedSignalId(null);
-    globeMapRef.current?.resetView();
   }
 
   function handleRegionChange(region: RegionKey) {
@@ -172,13 +177,13 @@ export function AppShell() {
           >
             <GlobeMap
               ref={globeMapRef}
+              mode={mapMode}
               events={activeMapRailMode === "global" ? displayedEvents : []}
               selectedId={selectedId}
               onSelectEvent={setSelectedId}
               signals={isMapScreen ? displayedSignals : []}
               selectedSignalId={selectedSignalId}
               onSelectSignal={setSelectedSignalId}
-              rightPadding={mapFramingRightPadding}
             />
             <div
               style={{

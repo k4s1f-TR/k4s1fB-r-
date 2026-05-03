@@ -71,3 +71,26 @@ body {
 .politics-feed-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(96, 165, 250, 0.36);
 }
+
+.sources-registry-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(96, 165, 250, 0.22) rgba(255, 255, 255, 0.025);
+}
+
+.sources-registry-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sources-registry-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.sources-registry-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(96, 165, 250, 0.2);
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.sources-registry-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(96, 165, 250, 0.32);
+}
